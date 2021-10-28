@@ -1,0 +1,117 @@
+---
+title: "Ejercicios EDA"
+author: "Lidia Sánchez Mérida"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Hip dataset
+
+```{r}
+# Descargamos el dataset obteniendo la cabecera y normalizando el tamaño de las filas
+#hip_dataset<-read.table("https://astrostatistics.psu.edu/datasets/HIP_star.dat", header=T, fill=T)
+hip_dataset<-read.table("HIP_star.dat", header=T, fill=T)
+# Dimensión
+dim(hip_dataset)
+# Nombre de las columnas
+colnames(hip_dataset)
+# Tipos de datos
+str(hip_dataset)
+```
+Como se puede visualizar en los resultados anteriores, este dataset dispone de **2.719 muestras y 9 variables**, siendo todas ellas numéricas.
+
+A continuación se calculan las medidas centrales, como la **media, la mediana y la moda**, para cada una de las columnas. Para ello utilizamos la función `apply` con el objetivo de realizar estos cálculos para cada una de las columnas.
+
+```{r}
+apply(hip_dataset, 2, mean)
+apply(hip_dataset, 2, median)
+apply(hip_dataset, 2, mode)
+```
+
+En el siguiente `chunk` se calcula el **mínimo y máximo** para cada una de las columnas del dataset. Para ello, seguiremos utilizando la función `apply` en combinación con la función `range`, que proporciona sendos valores en el mismo resultado.
+
+```{r}
+apply(hip_dataset, 2, range)
+```
+
+Ahora calcularemos la **varianza, desviación estándar y la desviación absoluta de la mediana** para la variable `RA`. 
+
+```{r}
+var(hip_dataset$RA)
+sd(hip_dataset$RA)
+mad(hip_dataset$RA)
+```
+A continuación probamos la función definida en los ejercicios para intentar comprobar si se pueden calcular **la mediana y la desviación absoluta de la mediana**. Y tal y como se puede observar en el siguiente `chunk`, se pueden calcular sin ningún problema.
+
+```{r}
+f = function(x) c(median(x), mad(x))  
+# Cálculo de la mediana y su desviación absoluta a partir de la 3ª columna
+f(hip_dataset[,3])
+```
+En este siguiente `chunk` se realizan los mismos cálculos anteriores pero para la variable `RA` usando el operado `%>%` de la librería **`dplyr`**.
+
+```{r}
+library(dplyr)
+c(hip_dataset$RA %>% median(), hip_dataset$RA %>% mad())
+```
+A continuación se propone averiguar cuál sería el resultado de ejecutar **`apply(hip,2,f)`**, siendo `f` la función definida anteriormente para calcular la mediana y su desviación absoluta.
+
+```{r}
+apply(hip_dataset, 2, f)
+```
+Como se puede observar en los resultados, el `chunk` anterior calcula la mediana y la desviación absoluta de la mediana para cada una de las columnas del dataset.
+
+Ahora pasamos a calcular el **cuartil 0.10 y 0.50** para la columna `RA` del dataset. Para ello utilizaremos la función `quantile` a la que le especificaremos como vector de probabilidades el cuartil inicial, el final y el número de pasos que debe realizar. Para obtener solo el cuartil 0.1 y 0.5 basta con con situarlos como inicio y fin de la secuencia, estableciendo una suma de 0.4 para no calcular ninguno más.
+
+```{r}
+quantile(hip_dataset$RA, probs=seq(0.1, 0.5, 0.4))
+```
+En caso de querer calcular los **cuatro cuartiles** podemos utilizar la misma función, solo que en este caso especificaremos como primer valor el Q1 (0.25) y 0.25 como suma para calcular los restantes.
+
+```{r}
+quantile(hip_dataset$RA, probs=seq(0.25, 1.0, 0.25))
+```
+A continuación se propone averiguar si la función `summary` proporciona la **distancia intercuartil**. Para ello la aplicamos sobre la misma variable anterior y como podemos ver en el siguiente `chunk`, esta medida no se proporciona directamente. Sin embargo, se puede calcular mediante la **diferencia del Q3 y del Q1**, gracias a que se pueden obtener dichos valores de manera independiente de los resultados de la función `summary`.
+
+```{r}
+hip_summ<-summary(hip_dataset$RA)
+hip_summ
+# Cálculo de IQR a partir de Q3-Q1
+as.numeric(hip_summ[5]) - as.numeric(hip_summ[2])
+```
+El objetivo del siguiente `chunk` es analizar los resultados de la función que se define así como su aplicación al *HIP* dataset. Como se puede apreciar en la salida, esta función indica con un valor `TRUE` si existen valores perdidos para cada una de las columnas, mientras que devuelve `FALSE` en caso de que no se hayan encontrado. Para este dataset solo la **columna `B.V` tiene valores perdidos**.
+
+```{r}
+hasNA = function(x) any(is.na(x)) 
+apply(hip_dataset, 2, hasNA)   
+```
+Si intentamos obtener el valor mínimo de la columna anterior, que contiene valores perdidos, utilizando la función **`min` nos devolverá `NA` como respuesta**. Para obtener el verdadero mínimo de esta columna deberemos especificar en la función `na.rm=TRUE` para que los ignore durante el proceso.
+
+```{r}
+min(hip_dataset$B.V)
+min(hip_dataset$B.V, na.rm = TRUE)
+```
+Otra forma de hacerlo sería utilizar la función **`na.omit`**, que elimina todas las muestras en las que existan valores perdidos. De este modo podemos calcular el mínimo de la variable `B.V` sin aportar ningún argumento adicional.
+
+```{r}
+hip_dataset_nan = na.omit(hip_dataset)
+# Suma de valores perdidos del dataset = 0
+sum(is.na(hip_dataset_nan))
+# Dimensiones del nuevo dataset sin NA
+dim(hip_dataset_nan)
+min(hip_dataset_nan$B.V)
+```
+En el siguiente `chunk` se propone una tercera forma de realizar un cálculo matemático generalizado para todo el dataset sin tener que modificarlo y adaptándose a los valores perdidos de cada columna. En este caso, calcularemos la **media para todas las columnas**, ignorando los valores `NA` existentes. De este modo, la eliminación de valores perdidos solo afectará a las medias de las columnas que dispongan de `NA`, como es el caso de la variable `B.V`.
+
+```{r}
+# Medias con el conjunto original
+apply(hip_dataset, 2, mean)
+
+# Medias con el conjunto original ignorando los NA para cada columna
+apply(hip_dataset, 2, function(x) mean(x, na.rm=TRUE))
+```
+
+
