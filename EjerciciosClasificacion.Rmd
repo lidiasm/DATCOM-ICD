@@ -1,0 +1,98 @@
+---
+title: "Ejercicios de Clasificación"
+author: "Lidia Sánchez Mérida"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+En primer lugar, cargamos la librerías necesarias para realizar los ejercicios de clasificación y establecemos una **semilla inicial para que los resultados puedan ser reproducibles**.
+
+```{r message=FALSE, warning=FALSE}
+# Cargamos las librerías necesarias para todos los ejercicios
+library(tidyverse)
+library(philentropy)
+
+# Semilla inicial
+set.seed(0)
+```
+
+# Ejercicio 1
+
+En este primer ejercicio el objetivo consiste en reproducir el comportamiento del algoritmo `KNN`, extendiendo su capacidad de aplicar diversas métricas para calcular las distancias entre las muestras a clasificar y las del conjunto de entrenamiento. Los parámetros que acepta esta función son:
+
+* `train`: es el conjunto de muestras **sin la columna a predecir** con el que se pretende realizar el entrenamiento del modelo.
+* `train_labels`: se trata de la variable a predecir con la que entrenar un nuevo modelo.
+* `test`: se trata del conjunto de validación **sin la columna a predecir** para evaluar la bondad del modelo y realizar las predicciones. Es un parámetro opcional, si no se proporciona, se tomará una porción del conjunto de entrenamiento para realizar la validación y las predicciones.
+* `test_labels`: se trata de la variable a predecir con la que evaluar el modelo entrenado. Es un parámetro opcional, si no se especifica se tomarán las etiquetas correspondientes al conjunto de test obtenido del conjunto de entrenamiento.
+* `k`: es el número de vecinos que se considerará para clasificar las muestras del conjunto de validación. Es un parámetro opcional, por defecto será 1.
+* `metric`: se trata de la métrica que se utilizará para calcular las distancias entre las muestras de entrenamiento y las de validación. Es un parámetro opcional, por defecto se aplicará la distancia Euclídea.
+
+```{r}
+my_knn <- function(train, train_labels, test=NA, test_labels=NA, k=1, metric="euclidean") {
+  new_train<-train
+  new_test<-test
+  # 90%-10% en caso de que no se haya especificado un conjunto de test
+  if (is.na(test)) {
+    shuffle_train <- sample(dim(train)[1])
+    pct90 <- (dim(train)[1] * 90) %/% 100
+    new_train <- train[shuffle_train[1:pct90], ]
+    train_labels <- train_labels[shuffle_train[1:pct90]]
+    new_test <- train[shuffle_train[(pct90+1):dim(train)[1]], ]
+    test_labels <- train_labels[shuffle_train[(pct90+1):dim(train)[1]]]
+  }
+  # Vector de predicciones
+  preds <- c()
+  # Calculamos la matriz de distancia entre cada muestra de test y todas las de train
+  for(i in 1:dim(new_test)[1]) {
+    dist_mat <- c()
+    for(j in 1:dim(new_train)[1]) {
+      xmat <- rbind(new_test[i,], new_train[j,])
+      dist_mat <- append(dist_mat, distance(as.data.frame(xmat), metric))
+    }
+    # Obtenemos las K muestras con menor distancia 
+    neighs <- sort(dist_mat)[1:k] 
+    # Realizamos una votación para decidir la clase a la que pertenece la muestra de test.
+    # Para ello se realiza una media de las clases de las muestras más cercanas y se 
+    # redondea el valor para obtener un número entero.
+    sample_class <- 0
+    for(s in 1:length(neighs)) {
+      pos <- which(dist_mat == neighs[s])
+      sample_class <- sample_class + train_labels[pos]
+    }
+    preds <- append(preds, round(sample_class/k))
+  }
+  
+  # Devuelve una lista con un vector que contiene las predicciones sobre el conjunto
+  # de test y un número real con la tasa del número de aciertos comparando las predicciones
+  # con las etiquetas reales de la variable `diagnosis`
+  return (list(preds, mean(preds == test_labels, na.rm=TRUE)))
+}
+```
+
+A continuación, aplicamos la función definida anteriormente al dataset `BreastCancer` para entrenar un nuevo modelo y obtener las predicciones de la variable `diagnosis`. Para ello, cargamos el dataset, eliminamos la columna `id` puesto que no aporta información, así como la columna `diagnosis` para luego proporcionarla por separado. Previo a la ejecución de la función, **escalamos y centramos** el conjunto de datos y **codificamos las categorías de la variable `diagnosis`** a etiquetas numéricas para realizar la votación de la clase a asignar a cada muestra del conjunto de test.
+
+```{r}
+### SERVIDOR EN MANTENIMIENTO ###
+# wbcd <- read.csv("https://resources.oreilly.com/examples/9781784393908/raw/ac9fe41596dd42fc3877cfa8ed410dd346c43548/Machine%20Learning%20with%20R,%20Second%20Edition_Code/Chapter%2003/wisc_bc_data.csv")
+# Cargamos el dataset desde un fichero
+wbcd<-read.csv("wisc_bc_data.csv")
+# Eliminamos el identificador de los registros porque no aporta información
+# Eliminamos la columna `diagnosis` con las predicciones porque se proporciona como parámetro independiente
+new_wbcd <- wbcd %>% select(-id) %>% select(-diagnosis)
+# Escalamos y centramos el conjunto de datos
+scaled_wbcd <- new_wbcd %>% mutate_if(is.numeric, scale, center = TRUE, scale = TRUE)
+
+### EXPERIMENTOS ###
+# Entrenamos un primer modelo con la distancia Euclídea y k=3
+first_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=3)
+# Entrenamos un segundo modelo con la distancia Euclidea y k=9
+second_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=9)
+# Entrenamos un tercer modelo con la distancia Minkowski y K=3
+third_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=3, metric="manhattan")
+# Entrenamos un cuarto modelo con la distancia Minkowski y k=9
+fourth_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=9, metric="manhattan")
+```
+
