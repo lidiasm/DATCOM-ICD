@@ -14,6 +14,7 @@ En primer lugar, cargamos la librerías necesarias para realizar los ejercicios 
 # Cargamos las librerías necesarias para todos los ejercicios
 library(tidyverse)
 library(philentropy)
+library(gridExtra)  # Librería para combinar diferentes gráficos en una sola vista
 
 # Semilla inicial
 set.seed(0)
@@ -50,7 +51,8 @@ my_knn <- function(train, train_labels, test=NA, test_labels=NA, k=1, metric="eu
     dist_mat <- c()
     for(j in 1:dim(new_train)[1]) {
       xmat <- rbind(new_test[i,], new_train[j,])
-      dist_mat <- append(dist_mat, distance(as.data.frame(xmat), metric))
+      # Silencia la salida de la función `distance` para luego imprimir la tasa de aciertos
+      dist_mat <- append(dist_mat, invisible(suppressMessages(distance(as.data.frame(xmat), metric)))) 
     }
     # Obtenemos las K muestras con menor distancia 
     neighs <- sort(dist_mat)[1:k] 
@@ -65,14 +67,18 @@ my_knn <- function(train, train_labels, test=NA, test_labels=NA, k=1, metric="eu
     preds <- append(preds, round(sample_class/k))
   }
   
-  # Devuelve una lista con un vector que contiene las predicciones sobre el conjunto
-  # de test y un número real con la tasa del número de aciertos comparando las predicciones
-  # con las etiquetas reales de la variable `diagnosis`
-  return (list(preds, mean(preds == test_labels, na.rm=TRUE)))
+  # Calculamos la tasa de aciertos comparando las predicciones con las etiquetas
+  # reales del conjunto de test
+  cat("\nTasa de aciertos: ", mean(preds == test_labels, na.rm=TRUE))
+  
+  # Devuelve una lista con un vector que contiene las predicciones sobre el conjunto de test
+  return (preds)
 }
 ```
 
 A continuación, aplicamos la función definida anteriormente al dataset `BreastCancer` para entrenar un nuevo modelo y obtener las predicciones de la variable `diagnosis`. Para ello, cargamos el dataset, eliminamos la columna `id` puesto que no aporta información, así como la columna `diagnosis` para luego proporcionarla por separado. Previo a la ejecución de la función, **escalamos y centramos** el conjunto de datos y **codificamos las categorías de la variable `diagnosis`** a etiquetas numéricas para realizar la votación de la clase a asignar a cada muestra del conjunto de test.
+
+En este ejercicio se han realizado cuatro experimentos diferentes. En los dos primeros se aplica la **distancia Euclídea** con dos diferentes valores de K, mientras que en los dos últimos se utiliza la **distancia de Manhattan**. He seleccionado esta métrica puesto que he leído en diversas fuentes (https://towardsdatascience.com/9-distance-measures-in-data-science-918109d069fa) que suele utilizarse para variables discretas o binarias, como es el caso de este dataset. Así, el objetivo consiste en comprobar el comportamiento del algoritmo con diferentes distancias y número de vecinos más cercanos.
 
 ```{r}
 ### SERVIDOR EN MANTENIMIENTO ###
@@ -88,11 +94,32 @@ scaled_wbcd <- new_wbcd %>% mutate_if(is.numeric, scale, center = TRUE, scale = 
 ### EXPERIMENTOS ###
 # Entrenamos un primer modelo con la distancia Euclídea y k=3
 first_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=3)
-# Entrenamos un segundo modelo con la distancia Euclidea y k=9
-second_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=9)
-# Entrenamos un tercer modelo con la distancia Minkowski y K=3
+# Entrenamos un segundo modelo con la distancia Euclidea y k=21
+second_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=21)
+# Entrenamos un tercer modelo con la distancia Manhattan y k=3
 third_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=3, metric="manhattan")
-# Entrenamos un cuarto modelo con la distancia Minkowski y k=9
-fourth_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=9, metric="manhattan")
+# Entrenamos un cuarto modelo con la distancia Manhattan y k=9
+fourth_knn_model <- my_knn(scaled_wbcd, as.numeric(wbcd$diagnosis, levels=unique(wbcd$diagnosis)), k=21, metric="manhattan")
+
+# Creamos un dataset con las predicciones de los cuatro modelos para representarlas en una comparativa
+knn_df <- data.frame(FirstModel=first_knn_model, SecondModel=second_knn_model, ThirdModel=third_knn_model, FourthModel=fourth_knn_model)
+# Modificamos las etiquetas de numéricas a las categorías 'Benign' y 'Malignant'
+knn_df <- knn_df %>% mutate(FirstModel=factor(FirstModel, labels = c("Benign", "Malignant"))) %>% mutate(SecondModel=factor(SecondModel, labels = c("Benign", "Malignant"))) %>% mutate(ThirdModel=factor(ThirdModel, labels = c("Benign", "Malignant"))) %>% mutate(FourthModel=factor(FourthModel, labels = c("Benign", "Malignant")))
+# Aplicamos la función summary() para ver la proporción de las predicciones realizadas por cada modelo
+cat("\n-----------------------------------------------------------\n")
+summary(knn_df)
+```
+Como se puede comprobar, la tasa de aciertos de los **dos modelos que utilizan la distancia Euclídea ronda los 48% y 42%, respectivamente**. Con un valor de K más pequeño, el algoritmo parece proporcionar mejores resultados aunque observando la proporción de las predicciones podemos apreciar que son bastante similares. 
+Mientras que en el caso de los **modelos que aplican la distancia Manhattan**, podemos observar que sus **tasas de aciertos son considerablemente superiores** utilizando los mismos valores de K que los modelos con la distancia Euclídea. Esto nos indica que este tipo de métrica ayuda al algoritmo a generalizar mejor y acertar más para este dataset en concreto. Sin embargo, de nuevo podemos visualizar que con un valor de K más pequeño se consiguen mejores resultados que con un valor mayor. Por lo tanto, para este dataset, el algoritmo KNN necesita considerar un menor número de vecinos para ajustarse más a los datos de entrenamiento.
+
+Por último, se representan los resultados obtenidos en los cuatro modelos con cuatro gráficos de barras en los que se reflejan el número de muestras clasificadas como benignas o malignas. Como se había comentado anteriormente, las predicciones de los dos primeros modelos son sumamente similares entre sí. A diferencia de las predicciones de los modelos que utilizan la distancia Manhattan, en los que se aprecia un aumento de muestras clasificadas como benignas y un decremento de las muestras de la clase opuesta, especialmente en el caso del tercer modelo con un K menor. Este hecho puede tener sentido si consideramos que el dataset dispone de **más muestras benignas que malignas** por lo que existe una mayor probabilidad de que los vecinos más cercanos a la muestra a clasificar pertenezcan a la clase mayoritaria.
+
+```{r}
+# Representamos las predicciones de los cuatro modelos en un grid 2x2
+g1 <- ggplot(data=knn_df, aes(x=FirstModel, fill=FirstModel)) + geom_bar() + xlab("Diagnóstico") + ylab("Frecuencias")
+g2 <- ggplot(data=knn_df, aes(x=SecondModel, fill=SecondModel)) + geom_bar() + xlab("Diagnóstico") + ylab("Frecuencias")
+g3 <- ggplot(data=knn_df, aes(x=ThirdModel, fill=ThirdModel)) + geom_bar() + xlab("Diagnóstico") + ylab("Frecuencias")
+g4 <- ggplot(data=knn_df, aes(x=FourthModel, fill=FourthModel)) + geom_bar() + xlab("Diagnóstico") + ylab("Frecuencias")
+grid.arrange(g1, g2, g3, g4, nrow=2, ncol = 2)
 ```
 
