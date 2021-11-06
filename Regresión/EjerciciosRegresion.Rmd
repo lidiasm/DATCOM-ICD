@@ -1,0 +1,145 @@
+---
+title: "Ejercicios de Regresión"
+author: "Lidia Sánchez Mérida"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Cargamos las librerías para los ejercicios
+require(ISLR)
+require(MASS)
+library(ISLR)
+library(MASS)
+
+# Semilla global para reproducir los resultados
+set.seed(0)
+```
+
+# Ejercicio 1
+
+En este ejercicio el objetivo es replicar el estudio realizado en el `Script1.R` de la asignatura pero sobre el conjunto de datos `california.dat`.
+
+```{r}
+# Cargamos el dataset `california`
+xtra <- read.csv("california.dat", comment.char="@", header = FALSE)
+# Asignamos manualmente los nombres de las columnas al dataset
+names(xtra) <- c("Longitude", "Latitude", "HousingMedianAge", "TotalRooms", "TotalBedrooms", "Population", "Households", "MedianIncome", "MedianHouseValue")
+# Representamos todos los predictores con respecto a la variable a predecir para ver si hay algún tipo de relación
+plotY <- function (x,y) {
+  plot(xtra[,y]~xtra[,x], xlab=paste(names(xtra)[x], sep=""), ylab=names(xtra)[y])
+}
+par(mfrow=c(3,3)) 
+x <- sapply(1:(dim(xtra)[2]-1), plotY, dim(xtra)[2])
+```
+En el gráfico anterior podemos apreciar que existe una relación creciente entre las últimas cinco variables representadas con respecto a la variable a predecir `MedianHouseValue`. El motivo es que se puede visualizar una tendencia al alza de los valores de la variable independiente conforme aumentan los valores de estas cinco variables en cada una de sus gráficas. 
+
+A continuación vamos a generar cinco modelos diferentes para cada una de las variables destacadas anteriormente utilizando **Regresión Lineal**.
+
+```{r}
+# Primer modelo de Regresión Lineal: TotalRooms~Y
+xtra.lm1 <- lm(MedianHouseValue~TotalRooms, data=xtra)
+summary(xtra.lm1)
+# Representamos la función estimada
+par(mfrow=c(2,1))
+plot(MedianHouseValue~TotalRooms, xtra)
+abline(xtra.lm1, col="red")
+# Obtenemos los intervalos de confianza
+confint(xtra.lm1)
+```
+Como podemos comprobar, según el p-valor obtenido en el estadístico F la variable `TotalRooms` está relacionada linealmente con la variable a predecir `MedianHouseValue` a pesar de su bajo valor de R².
+
+```{r}
+# Segundo modelo de Regresión Lineal: TotalBredrooms~Y
+xtra.lm2 <- lm(MedianHouseValue~TotalBedrooms, data=xtra)
+summary(xtra.lm2)
+# Representamos la función estimada
+par(mfrow=c(2,1))
+plot(MedianHouseValue~TotalBedrooms, xtra)
+abline(xtra.lm2, col="red")
+# Obtenemos los intervalos de confianza
+confint(xtra.lm2)
+```
+En este segundo modelo se ha utilizado un único predictor: `TotalBedrooms`, y como se aprecia en los resultados, parece que su relación con la variable independiente es muy similar al caso anterior.
+
+```{r}
+# Tercer modelo de Regresión Lineal: Population~Y
+xtra.lm3 <- lm(MedianHouseValue~Population, data=xtra)
+summary(xtra.lm3)
+# Representamos la función estimada
+par(mfrow=c(2,1))
+plot(MedianHouseValue~Population, xtra)
+abline(xtra.lm3, col="red")
+# Obtenemos los intervalos de confianza
+confint(xtra.lm3)
+```
+En este tercer modelo compuesto por el predictor `Population` podemos observar que también existe una relación lineal con la variable a predecir aunque algo menos significativa, en comparación con los dos anteriores modelos puesto que el p-valor del estadístico F es mayor.
+
+```{r}
+# Cuarto modelo de Regresión Lineal: Households~Y
+xtra.lm4 <- lm(MedianHouseValue~Households, data=xtra)
+summary(xtra.lm4)
+# Representamos la función estimada
+par(mfrow=c(2,1))
+plot(MedianHouseValue~Households, xtra)
+abline(xtra.lm4, col="red")
+# Obtenemos los intervalos de confianza
+confint(xtra.lm4)
+```
+En este cuarto modelo compuesto únicamente por el predictor `Households` también aparece una relación lineal con la variable independiente con una clara significancia estadística por su p-valor menor que el umbral 0,05.
+
+```{r}
+# Quinto modelo de Regresión Lineal: MedianIncome~Y
+xtra.lm5 <- lm(MedianHouseValue~MedianIncome, data=xtra)
+summary(xtra.lm5)
+# Representamos la función estimada
+par(mfrow=c(2,1))
+plot(MedianHouseValue~MedianIncome, xtra)
+abline(xtra.lm5, col="red")
+# Obtenemos los intervalos de confianza
+confint(xtra.lm5)
+```
+Finalmente, en este quinto modelo en el que solo participa el predictor `MedianIncome` podemos observar, de nuevo, una relación lineal con la variable a predecir por su p-valor menor que el umbral. Sin embargo, a diferencia de los modelos anteriores, en este caso el valor de R² es bastante más elevado, lo cual indica que la relación entre ambas variables es mucho más fuerte. Como parece que este quinto modelo es el mejor que se ha obtenido de todos los experimentos, a continuación calculamos las predicciones sobre el conjunto de entrenamiento y su respectivo RMSE.
+
+```{r}
+#  Obtenemos las predicciones sobre el conjunto de entrenamiento
+xtra.lm5.preds <- predict(xtra.lm5, xtra)
+# Calculamos el RMSE
+sqrt(sum(abs(xtra$MedianHouseValue-xtra.lm5.preds)^2)/length(xtra.lm5.preds)) 
+```
+A continuación vamos a crear un modelo con **Regresión Lineal Múltiple** utilizando todas las variables que se han estudiado hasta el momento. Como podemos observar en los resultados, todos los predictores son altamente significativos puesto que sus p-valores son menores que el umbral. Sin embargo, según el valor de R² este modelo solo puede explicar el 53% de los datos.
+
+```{r}
+# Primer modelo con Regresión Lineal Múltiple
+xtra.lmm1 <- lm(MedianHouseValue~TotalRooms+TotalBedrooms+Population+Households+MedianIncome, data=xtra)
+summary(xtra.lmm1)
+```
+Con el objetivo de intentar mejorar el modelo anterior, vamos a realizar un segundo experimento incluyendo todas las variables disponibles como predictores a excepción de la variable independiente. Como podemos observar en los resultados, el modelo ha mejorado hasta alcanzar un R² del 64% aproximadamente. Por otro lado, si apreciamos sus p-valores, podemos determinar que todas las variables son estadísticamente significativas y tienen una relación lineal con la variable a predecir.
+
+```{r}
+# Segundo modelo con Regresión Lineal Múltiple
+xtra.lmm2 <- lm(MedianHouseValue~., data=xtra)
+summary(xtra.lmm2)
+```
+Ahora vamos a añadir algunas **interacciones y términos no lineales** para intentar mejorar el valor de R² del modelo anterior. Comenzamos añadiendo un término cuadrático de la variable `MedianIncome` puesto que con este predictor en solitario se ha conseguido el segundo mejor modelo. Tal y como se observa en los resultados, apenas ha mejorado el valor de R² aunque el nuevo término cuadrático dispone de una gran significancia estadística según su p-valor. Si probamos a aumentar un grado y añadir también un término cúbico sobre la misma variable, podemos apreciar en el cuarto modelo que en este caso sí que mejora el valor de R². Sin embargo, añadiendo un término a la cuarta y entrenando un quinto modelo no obtenemos ninguna mejora.
+
+```{r}
+# Tercer modelo con Regresión Lineal Múltiple añadiendo un término cuadrático
+xtra.lmm3 <- lm(MedianHouseValue~.+I(MedianIncome^2), data=xtra)
+summary(xtra.lmm3)
+# Cuarto modelo con Regresión Lineal Múltiple añadiendo un término cúbico
+xtra.lmm4 <- lm(MedianHouseValue~.+I(MedianIncome^2)+I(MedianIncome^3), data=xtra)
+summary(xtra.lmm4)
+# Quinto modelo con Regresión Lineal Múltiple añadiendo un término a la cuarta
+xtra.lmm5 <- lm(MedianHouseValue~.+I(MedianIncome^2)+I(MedianIncome^3)+I(MedianIncome^4), data=xtra)
+summary(xtra.lmm5)
+```
+Finalmente obtenemos las predicciones y el RMSE sobre el conjunto de entrenamiento utilizando el cuarto mejor modelo entrenado con Regresión Logística Múltiple e incluyendo un término cuadrático y otro cúbico. 
+
+```{r}
+# Obtenemos las predicciones sobre el conjunto de entrenamiento
+xtra.lmm4.preds <- predict(xtra.lmm4, xtra)
+# Calculamos el RMSE 
+sqrt(sum(abs(xtra$MedianHouseValue-xtra.lmm4.preds)^2)/length(xtra.lmm4.preds)) 
+```
+
