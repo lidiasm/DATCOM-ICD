@@ -4,6 +4,12 @@
 
 ### Ejercicios de Evaluación Continua
 
+#### Regresión
+
+1. En el primer ejercicio el objetivo consiste en analizar el dataset `California` para experimentar con diferentes modelos de Regresión Lineal Simple y Múltiple, añadiendo interacciones y términos no lineales.
+
+2. 
+
 #### Clasificación
 
 1. Reproducir el comportamiento del algoritmo KNN para aplicar diferentes métricas con las que calcular las distancias entre muestras. Para cada métrica, aplicar diferentes valores para K y realizar varios experimentos sobre el dataset `BreastCancer`.
