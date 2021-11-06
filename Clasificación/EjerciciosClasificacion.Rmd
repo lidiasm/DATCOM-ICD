@@ -19,6 +19,7 @@ library(caret)
 library(corrplot)
 library(ISLR)
 library(car)
+library(MASS)
 
 # Semilla inicial
 set.seed(0)
@@ -91,7 +92,7 @@ En este ejercicio se han realizado cuatro experimentos diferentes. En los dos pr
 wbcd <- read.csv("wisc_bc_data.csv")
 # Eliminamos el identificador de los registros porque no aporta información
 # Eliminamos la columna `diagnosis` con las predicciones porque se proporciona como parámetro independiente
-new_wbcd <- wbcd %>% select(-id) %>% select(-diagnosis)
+new_wbcd <- wbcd %>% dplyr::select(-c(id, diagnosis)) 
 # Escalamos y centramos el conjunto de datos
 scaled_wbcd <- new_wbcd %>% mutate_if(is.numeric, scale, center = TRUE, scale = TRUE)
 
@@ -148,7 +149,7 @@ Como podemos apreciar, existen varios grupos de variables con una alta correlaci
 
 ```{r}
 # Segundo modelo de Regresión Logística utilizando algunos predictores
-wbcd_glm2 <- train(new_wbcd %>% select(c(area_mean, compactness_worst, concavity_se, smoothness_mean, symmetry_mean)), y=wbcd$diagnosis, method="glm", tuneLength=10, trControl=trainControl(method="cv"))
+wbcd_glm2 <- train(new_wbcd %>% dplyr::select(c(area_mean, compactness_worst, concavity_se, smoothness_mean, symmetry_mean)), y=wbcd$diagnosis, method="glm", tuneLength=10, trControl=trainControl(method="cv"))
 wbcd_glm2
 ```
 Como podemos observar el mejor modelo resultante de la validación cruzada dispone de un 92% de precisión, aproximadamente, lo cual puede indicar que tiene una buena capacidad de generalización para predecir la clase de muestras desconocidas.
@@ -187,8 +188,8 @@ Una vez conocemos que ninguna de las dos condiciones anteriores se cumplen para 
 
 ```{r}
 # Dividimos el conjunto de datos en entrenamiento (2001-2004) y validación (2005)
-smkt_train <- subset(Smarket, Year>=2001 & Year<=2004) %>% select(c(Lag1, Lag2, Lag3, Lag4, Lag5, Direction))
-smkt_test <- subset(Smarket, Year=2005) %>% select(c(Lag1, Lag2, Lag3, Lag4, Lag5, Direction))
+smkt_train <- subset(Smarket, Year>=2001 & Year<=2004) %>% dplyr::select(c(Lag1, Lag2, Lag3, Lag4, Lag5, Direction))
+smkt_test <- subset(Smarket, Year=2005) %>% dplyr::select(c(Lag1, Lag2, Lag3, Lag4, Lag5, Direction))
 # Primer modelo entrenado con LDA 
 smkt_lda <- lda(Direction~., data=smkt_train)
 # Obtenemos las predicciones sobre el conjunto de test
@@ -214,15 +215,15 @@ Finalmente entrenaremos un tercer modelo usando **Regresión Logística**. Para 
 
 ```{r}
 # Correlación entre las variables `Lag`
-corrplot(cor(Smarket %>% select(c(Lag1, Lag2, Lag3, Lag4, Lag5))), method='color', order='alphabet')
+corrplot(cor(Smarket %>% dplyr::select(c(Lag1, Lag2, Lag3, Lag4, Lag5))), method='color', order='alphabet')
 # Outliers en las variables `Lag`
-boxplot(Smarket %>% select(c(Lag1, Lag2, Lag3, Lag4, Lag5)), col="orange")
+boxplot(Smarket %>% dplyr::select(c(Lag1, Lag2, Lag3, Lag4, Lag5)), col="orange")
 ```
 Tras verificar que solo se cumple una condición de las dos exigidas, entrenamos el modelo con Regresión Logística y como era de esperar también proporciona una tasa de aciertos similar a los otros dos modelos con un **53% de precisión**. Por lo tanto, este algoritmo tampoco es el adecuado para clasificar las muestras de este conjunto de datos.
 
 ```{r}
 # Tercer modelo entrenado con Regresión Logística
-smkt_glm <- train(smkt_train %>% select(-Direction), y=smkt_train$Direction, method="glm")
+smkt_glm <- train(smkt_train %>% dplyr::select(-Direction), y=smkt_train$Direction, method="glm")
 # Obtenemos las predicciones sobre el conjunto de test
 smkt_glm_preds <- predict(smkt_glm, smkt_test)
 # Calculamos la tasa de aciertos
@@ -230,7 +231,7 @@ mean(smkt_glm_preds==smkt_test$Direction)
 ```
 # Ejercicio 4
 
-En este último ejercicio se pretende realizar una comparación entre los resultados obtenidos al entrenar diferentes modelos con diversos datasets. Comenzamos utilizando el **test de Wilcoxon** para determinar si los modelos entrenados con LDA son significativamente diferentes a los entrenados con QDA. Para ello establecemos como **hipótesis nula que son iguales**, y como hipótesis alternativa que son diferentes. Como se puede apreciar en los resultados, el p-valor devuelto es mayor que el umbral (0.05) por lo tanto **no se puede rechazar la hipótesis nula** y, en consecuencia, no se puede determinar que el comportamiento de sendos algoritmos es el mismo.
+En este último ejercicio se pretende realizar una comparación entre los resultados obtenidos al entrenar diferentes modelos con diversos datasets. Comenzamos utilizando el **test de Wilcoxon** para determinar si los modelos entrenados con LDA son significativamente diferentes a los entrenados con QDA. Para ello establecemos como **hipótesis nula que son iguales**, y como hipótesis alternativa que son diferentes. Como se puede apreciar en los resultados, el p-valor devuelto es mayor que el umbral (0.05) por lo tanto **no se puede rechazar la hipótesis nula** y, en consecuencia, se puede determinar que los algoritmos LDA y QDA son diferentes al 95% de confianza.
 
 A continuación se aplica el **test de Friedman** para realizar una comparación múltiple entre los tres algoritmos disponibles: KNN, LDA y QDA. En este test la **hipótesis nula afirma que sus comportamientos son iguales**, frente a la hipótesis alternativa que sostiene que son diferentes. De nuevo, el p-valor resultante es mayor que el umbral (0.05) por lo tanto se **rechaza la hipótesis nula**. Así, podemos indicar que los comportamientos de los tres algoritmos no son iguales al 95% de confianza.
 
@@ -241,9 +242,9 @@ clasif_models <- read.csv("clasif_train_alumnos.csv")
 lda.vs.qda <- wilcox.test(clasif_models$out_train_lda, clasif_models$out_train_qda)
 lda.vs.qda
 # Test de Friedman: LDA vs. QDA vs. KNN
-friedman.test(data.matrix(clasif_models %>% select(-X)))
+friedman.test(data.matrix(clasif_models %>% dplyr::select(-X)))
 ```
-Finalmente, aunque el test de Friedman ha rechazado la hipótesis nula, vamos a aplicar un Post Hoc para comparar a todos los algoritmos entre sí efectuando **pares de tests (LDA vs. QDA, QDA vs. KNN, LDA vs. KNN)**. Para cada una de las combinaciones utilizaremos un **test de Wilcoxon** de modo que devuelva los p-valores sin tener en cuenta el `FWER`, que es el error acumulado que se comete al realizar varios tests simultáneos sobre los mismos datos. Posteriormente, lo tendremos en consideración aplicando una **penalización de Holm con la que calcular unos nuevos p-valores ajustados al `FWER`**. Como podemos comprobar en los resultados, los p-valores devueltos para cada una de las comparaciones son altísimos, lo cual indica que estadísticamente no existe ningún algoritmo que destaque sobre los demás.
+Finalmente, como el test de Friedman ha rechazado la hipótesis nula, vamos a aplicar un Post Hoc para comparar a todos los algoritmos entre sí realizando **pares de tests (LDA vs. QDA, QDA vs. KNN, LDA vs. KNN)**. Para cada una de las combinaciones utilizaremos el **test de Wilcoxon** de modo que devuelva los p-valores. Sin embargo, la sucesión de múltiples tests sobre el mismo conjunto de datos puede disparar el error `FWER`. Por ello, aplicaremos la **penalización por pasos mediante Holm** para ajustar los p-valores obtenidos y así controlar el error acumulado.Como podemos comprobar en los resultados, los p-valores devueltos para cada una de las comparaciones son altísimos, lo cual indica que estadísticamente no existe ningún algoritmo que destaque sobre los demás.
 
 ```{r}
 # Test de Wilcoxon: QDA vs. KNN
