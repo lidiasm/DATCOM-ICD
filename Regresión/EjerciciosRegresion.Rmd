@@ -9,8 +9,10 @@ knitr::opts_chunk$set(echo = TRUE)
 # Cargamos las librerías para los ejercicios
 require(ISLR)
 require(MASS)
+require(kknn)
 library(ISLR)
 library(MASS)
+library(kknn)
 
 # Semilla global para reproducir los resultados
 set.seed(0)
@@ -18,7 +20,7 @@ set.seed(0)
 
 # Ejercicio 1
 
-En este ejercicio el objetivo es replicar el estudio realizado en el `Script1.R` de la asignatura pero sobre el conjunto de datos `california.dat`.
+En este ejercicio el objetivo es replicar el estudio realizado en el `Script1.R` de la asignatura pero sobre el conjunto de datos `california.dat`. Para ello analizaremos sus variables y entrenaremos diferentes modelos con Regresión Lineal Simple y Múltiple.
 
 ```{r}
 # Cargamos el dataset `california`
@@ -141,5 +143,132 @@ Finalmente obtenemos las predicciones y el RMSE sobre el conjunto de entrenamien
 xtra.lmm4.preds <- predict(xtra.lmm4, xtra)
 # Calculamos el RMSE 
 sqrt(sum(abs(xtra$MedianHouseValue-xtra.lmm4.preds)^2)/length(xtra.lmm4.preds)) 
+```
+# Ejercicio 2
+
+Para el segundo ejercicio el objetivo consiste en aplicar el estudio realizado en el `Script2.R` de la asignatura sobre el mismo conjunto de datos anterior: `california.dat`. En esta parte, experimentaremos con el algoritmo KNN aplicando validación cruzada, además de comparar los resultados de diferentes algoritmos mediante tests estadísticos.
+
+En primer lugar vamos a entrenar un modelo con el algoritmo KNN en el que utilizaremos todos los predictores puesto que ha sido una de las mejores fórmulas encontradas hasta el momento. Dejamos la configuración por defecto con K=7, el escalado de los datos y que sea el algoritmo el que busque la mejor función kernel para el dataset. Posteriormente evaluamos la bondad del modelo utilizando el mismo conjunto de entrenamiento. Como podemos observar en los resultados, el **RMSE obtenido con el KNN es el menor** conocido hasta el momento para este dataset, lo cual nos indica que este modelo ha sido capaz de ajustarse mejor a los datos aunque perdiendo cierta interpretabilidad. 
+
+```{r}
+# Primer modelo con KNN 
+xtra.knn1 <- kknn(MedianHouseValue~., xtra, xtra)
+# Visualizamos las predicciones realizadas sobre el conjunto de entrenamiento
+plot(xtra$MedianHouseValue~xtra$MedianIncome)
+points(xtra$MedianIncome, xtra.knn1$fitted.values, col="blue", pch=20)
+# Obtenemos las predicciones sobre el conjunto de entrenamiento y calculamos el RMSE
+sqrt(sum((xtra$MedianHouseValue-xtra.knn1$fitted.values)^2)/length(xtra.knn1$fitted.values)) 
+```
+A continuación entrenamos un segundo modelo utilizando el algoritmo KNN con la fórmula de términos cúbicos y cuadráticos que mejor resultado ha proporcionado con Regresión Lineal Múltiple. Según los resultados, el RMSE ha disminuido en más de 200 puntos por lo que hemos conseguido ajustar más el modelo a los datos de entrenamiento.
+
+```{r}
+# Segundo modelo con KNN 
+xtra.knn2 <- kknn(MedianHouseValue~.+I(MedianIncome^2)+I(MedianIncome^3), xtra, xtra)
+# Visualizamos las predicciones realizadas sobre el conjunto de entrenamiento
+plot(xtra$MedianHouseValue~xtra$MedianIncome)
+points(xtra$MedianIncome, xtra.knn2$fitted.values, col="blue", pch=20)
+# Obtenemos las predicciones sobre el conjunto de entrenamiento y calculamos el RMSE
+sqrt(sum((xtra$MedianHouseValue-xtra.knn2$fitted.values)^2)/length(xtra.knn2$fitted.values)) 
+```
+En esta segunda parte del ejercicio vamos a aplicar **validación cruzada para entrenar varios modelos de Regresión Lineal Múltiple y de KNN** utilizando todos los predictores disponibles para predecir la variable independiente del dataset `california`. El objetivo consiste en comparar la capacidad de generalización media que disponen los modelos entrenados con sendos algoritmos.
+
+```{r}
+# Validación cruzada para entrenar varios modelos con Regresión Lineal Múltiple y todos los predictores
+nombre <- "california"
+run_lm_fold <- function(i, x, tt = "test") {
+  file <- paste(x, "-5-", i, "tra.dat", sep="")
+  x_tra <- read.csv(file, comment.char="@", header=FALSE)
+  file <- paste(x, "-5-", i, "tst.dat", sep="")
+  x_tst <- read.csv(file, comment.char="@", header=FALSE)
+  In <- length(names(x_tra)) - 1
+  names(x_tra)[1:In] <- paste ("X", 1:In, sep="")
+  names(x_tra)[In+1] <- "Y"
+  names(x_tst)[1:In] <- paste ("X", 1:In, sep="")
+  names(x_tst)[In+1] <- "Y"
+  if (tt == "train") {
+    test <- x_tra
+  }
+  else {
+    test <- x_tst
+  }
+  fitMulti=lm(Y~.,x_tra)
+  yprime=predict(fitMulti,test)
+  sum(abs(test$Y-yprime)^2)/length(yprime) ##MSE
+}
+lmMSEtrain<-mean(sapply(1:5,run_lm_fold,nombre,"train"))
+lmMSEtrain
+lmMSEtest<-mean(sapply(1:5,run_lm_fold,nombre,"test"))
+lmMSEtest
+
+# Validación cruzada para entrenar varios modelos con KNN y todos los predictores
+run_knn_fold <- function(i, x, tt = "test") {
+  file <- paste(x, "-5-", i, "tra.dat", sep="")
+  x_tra <- read.csv(file, comment.char="@", header=FALSE)
+  file <- paste(x, "-5-", i, "tst.dat", sep="")
+  x_tst <- read.csv(file, comment.char="@", header=FALSE)
+  In <- length(names(x_tra)) - 1
+  names(x_tra)[1:In] <- paste ("X", 1:In, sep="")
+  names(x_tra)[In+1] <- "Y"
+  names(x_tst)[1:In] <- paste ("X", 1:In, sep="")
+  names(x_tst)[In+1] <- "Y"
+  if (tt == "train") {
+    test <- x_tra
+  }
+  else {
+    test <- x_tst
+  }
+  fitMulti=kknn(Y~.,x_tra,test)
+  yprime=fitMulti$fitted.values
+  sum(abs(test$Y-yprime)^2)/length(yprime) ##MSE
+}
+knnMSEtrain<-mean(sapply(1:5,run_knn_fold,nombre,"train"))
+knnMSEtrain
+knnMSEtest<-mean(sapply(1:5,run_knn_fold,nombre,"test"))
+knnMSEtest
+```
+Como podemos apreciar en los resultados, parece que en media los modelos entrenados con KNN son capaces de minimizar el RMSE frente a los entrenados con Regresión Lineal Múltiple. De este modo, conseguimos un modelo que se ajusta más a los datos, que dispone de una mayor capacidad de generalización, a costa de perder interpretabilidad.
+
+Finalmente, vamos a realizar una **comparativa** entre los resultados obtenidos sobre los conjuntos de entrenamiento y validación de diversos datasets al aplicar los algoritmos de **Regresión Lineal, KNN y M5**. Proponemos a KNN como el mejor candidato para realizar los tests.
+
+```{r}
+# Leemos los resultados sobre el conjunto de entrenamiento
+resultados <- read.csv("regr_train_alumnos.csv")
+tablatra <- cbind(resultados[,2:dim(resultados)[2]])
+colnames(tablatra) <- names(resultados)[2:dim(resultados)[2]]
+rownames(tablatra) <- resultados[,1]
+# Leemos los resultados sobre el conjunto de test
+resultados <- read.csv("regr_test_alumnos.csv")
+tablatst <- cbind(resultados[,2:dim(resultados)[2]])
+colnames(tablatst) <- names(resultados)[2:dim(resultados)[2]]
+rownames(tablatst) <- resultados[,1]
+# Normalizamos la tabla de resultados de tests para Wilcoxon
+# ""+ 0.1 porque wilcox R falla para valores == 0 en la tabla""
+difs <- (tablatst[,1] - tablatst[,2]) / tablatst[,1]
+wilc_1_2 <- cbind(ifelse (difs<0, abs(difs)+0.1, 0+0.1), ifelse (difs>0, 	abs(difs)+0.1, 0+0.1))
+colnames(wilc_1_2) <- c(colnames(tablatst)[1], colnames(tablatst)[2])
+head(wilc_1_2)
+
+# Aplicamos el test de Wilcoxon sobre Regresión Lineal y KNN
+LMvsKNNtst <- wilcox.test(wilc_1_2[,1], wilc_1_2[,2], alternative = "two.sided", paired=TRUE)
+Rmas <- LMvsKNNtst$statistic
+pvalue <- LMvsKNNtst$p.value
+LMvsKNNtst <- wilcox.test(wilc_1_2[,2], wilc_1_2[,1], alternative = "two.sided", paired=TRUE)
+Rmenos <- LMvsKNNtst$statistic
+Rmas
+Rmenos
+pvalue
+```
+Como podemos apreciar, el p-valor resultante de aplicar el test de Wilcoxon nos revela que **no se puede rechazar la hipótesis nula** de que el algoritmo KNN tiene el mismo comportamiento que Regresión Lineal sobre los datasets probados. Así, se puede determinar que solo existe un 23.4% de confianza de que sean distintos.
+
+A continuación aplicamos el test de Friedman para comparar los tres algoritmos simultáneamente. En este caso, el p-valor devuelto es menor que el umbral=0.05 por lo que **rechazamos la hipótesis de que los tres algoritmos son iguales**. Para determinar cuáles pueden ser los algoritmos que destaquen sobre el resto, vamos a agrupar los algoritmos por pares siendo 1:Regresión Lineal, 2:KNN y 3:M5, de modo que se puedan realizar **múltiples tests de Wilcoxon con una penalización por pasos de Holm** para controlar el error `FWER` acumulado de ejecutar varios tests sobre los mismos datos. Tal y como se aprecia en los resultados, existe una diferencia significativa entre el 1 (Regresión Lineal) y el 3 (M5) puesto que su p-valor está por debajo del umbral=0.05. Sin embargo, también se puede considerar al 90% de confianza aproximadamente que también existen diferencias significativas entre el 2 (KNN) y 3 (M5). Así, podemos concluir que el algoritmo M5 es significativamente distinto de los algoritmos de Regresión Lineal y KNN, mientras que estos dos según su p-valor podrían considerarse iguales.
+
+```{r}
+# Aplicamos el test de Friedman para comparar los tres algoritmos simultáneamente
+test_friedman <- friedman.test(as.matrix(tablatst))
+test_friedman
+# Aplicamos un Post Hoc con el test de Wilcoxon y una penalización por pasos de Holm
+tam <- dim(tablatst)
+groups <- rep(1:tam[2], each=tam[1])
+pairwise.wilcox.test(as.matrix(tablatst), groups, p.adjust = "holm", paired = TRUE)
 ```
 
