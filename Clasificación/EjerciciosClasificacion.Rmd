@@ -231,27 +231,26 @@ mean(smkt_glm_preds==smkt_test$Direction)
 ```
 # Ejercicio 4
 
-En este último ejercicio se pretende realizar una comparación entre los resultados obtenidos al entrenar diferentes modelos con diversos datasets. Comenzamos utilizando el **test de Wilcoxon** para determinar si los modelos entrenados con LDA son significativamente diferentes a los entrenados con QDA. Para ello establecemos como **hipótesis nula que son iguales**, y como hipótesis alternativa que son diferentes. Como se puede apreciar en los resultados, el p-valor devuelto es mayor que el umbral (0.05) por lo tanto **no se puede rechazar la hipótesis nula** y, en consecuencia, se puede determinar que los algoritmos LDA y QDA son diferentes al 95% de confianza.
+En este último ejercicio se pretende realizar una comparación entre los resultados obtenidos al entrenar diferentes modelos con diversos datasets. Como se trata de varias medidas realizadas sobre los mismos datasets, debemos utilizar el **test de Wilcoxon para muestras pareadas**. De este modo podremos conocer si los modelos entrenados con LDA son significativamente diferentes a los entrenados con QDA. Para ello establecemos como **hipótesis nula que son iguales**, y como hipótesis alternativa que son diferentes. Según el p-valor resultante, al no ser menor que el umbral=0.05 no podemos rechazar la hipótesis nula, aunque existe un **82% (1-0.18) de confianza en que el algoritmo LDA es diferente de QDA**.
 
-A continuación se aplica el **test de Friedman** para realizar una comparación múltiple entre los tres algoritmos disponibles: KNN, LDA y QDA. En este test la **hipótesis nula afirma que sus comportamientos son iguales**, frente a la hipótesis alternativa que sostiene que son diferentes. De nuevo, el p-valor resultante es mayor que el umbral (0.05) por lo tanto se **rechaza la hipótesis nula**. Así, podemos indicar que los comportamientos de los tres algoritmos no son iguales al 95% de confianza.
+A continuación se aplica el **test de Friedman** para realizar una comparación múltiple entre los tres algoritmos disponibles: KNN, LDA y QDA. En este test la **hipótesis nula afirma que sus comportamientos son iguales**, frente a la hipótesis alternativa que sostiene que son diferentes. De nuevo, el p-valor resultante es mayor que el umbral=0.05 por lo tanto no se puede rechazar la hipótesis nula. En este caso solo hay un **48% (1-0.52) de confianza en que los tres algoritmos sean diferentes**.
 
 ```{r}
 # Cargamos los resultados de aplicar diferentes clasificadores a diversos datasets
 clasif_models <- read.csv("clasif_train_alumnos.csv")
 # Test de Wilcoxon: LDA vs. QDA
-lda.vs.qda <- wilcox.test(clasif_models$out_train_lda, clasif_models$out_train_qda)
+lda.vs.qda <- wilcox.test(clasif_models$out_train_lda, clasif_models$out_train_qda, alternative = "two.sided", paired=TRUE)
 lda.vs.qda
 # Test de Friedman: LDA vs. QDA vs. KNN
-friedman.test(data.matrix(clasif_models %>% dplyr::select(-X)))
+clasif_models_mat <- data.matrix(clasif_models %>% dplyr::select(-X))
+friedman.test(clasif_models_mat)
 ```
-Finalmente, como el test de Friedman ha rechazado la hipótesis nula, vamos a aplicar un Post Hoc para comparar a todos los algoritmos entre sí realizando **pares de tests (LDA vs. QDA, QDA vs. KNN, LDA vs. KNN)**. Para cada una de las combinaciones utilizaremos el **test de Wilcoxon** de modo que devuelva los p-valores. Sin embargo, la sucesión de múltiples tests sobre el mismo conjunto de datos puede disparar el error `FWER`. Por ello, aplicaremos la **penalización por pasos mediante Holm** para ajustar los p-valores obtenidos y así controlar el error acumulado.Como podemos comprobar en los resultados, los p-valores devueltos para cada una de las comparaciones son altísimos, lo cual indica que estadísticamente no existe ningún algoritmo que destaque sobre los demás.
+Finalmente, aunque no se haya rechazado la hipótesis de que existen diferencias entre los tres algoritmos, vamos a aplicar un Post Hoc para intentar averiguar si alguno de ellos destaca sobre el resto. Para ello, en primer lugar dividimos los algoritmos en grupos siendo **KNN el grupo 1, LDA el grupo 2 y QDA el grupo 3**. A continuación ejecutamos múltiples tests para comparar los grupos entre sí utilizando el **test de Wilcoxon con una penalización por pasos mediante Holm** para controlar el error `FWER` que se acumula al realizar tests múltiples sobre un mismo conjunto de datos. Según los resultados obtenidos, podemos comprobar como ninguno de los p-valores calculados para los diferentes tests son menores ni cercanos al umbral=0.05, por lo que **no existen diferencias significativas entre ninguno de los algoritmos**.
 
 ```{r}
-# Test de Wilcoxon: QDA vs. KNN
-qda.vs.knn <- wilcox.test(clasif_models$out_train_qda, clasif_models$out_train_knn)
-# Test de Wilcoxon: LDA vs. KNN
-lda.vs.knn <- wilcox.test(clasif_models$out_train_lda, clasif_models$out_train_knn)
-# Comparativa de los grupos LDA vs. QDA | QDA vs. KNN | LDA vs. KNN con la corrección de Holm
-p.adjust(c(lda.vs.qda$p.value, qda.vs.knn$p.value, lda.vs.knn$p.value), method = "holm")
+# Dividimos los tres algoritmos entre grupos del 1 al 3 (1:KNN, 2:LDA, 3:QDA)
+groups <- rep(1:dim(clasif_models_mat)[2], each=dim(clasif_models_mat)[1])
+# Test de Wilcoxon con corrección por pasos de Holm
+pairwise.wilcox.test(clasif_models_mat, groups, p.adjust = "holm", paired = TRUE)
 ```
 
