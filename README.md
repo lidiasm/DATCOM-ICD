@@ -8,7 +8,7 @@
 
 1. En el primer ejercicio el objetivo consiste en analizar el dataset `California` para experimentar con diferentes modelos de Regresión Lineal Simple y Múltiple, añadiendo interacciones y términos no lineales.
 
-2. 
+2. En el segundo ejercicio, la primera parte consiste en aplicar validación cruzada para entrenar varios modelos con Regresión Lineal Múltiple y KNN utilizando las mismas particiones almacenadas como ficheros sobre el dataset `California`. Mientras que la segunda parte se trata de realizar comparativas mediante tests estadísticos entre los resultados obtenidos sobre varios datasets para los algoritmos de Regresión Lineal, KNN y M5.
 
 #### Clasificación
 
