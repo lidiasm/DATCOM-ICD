@@ -4,6 +4,9 @@
 
 ### Ejercicios de Evaluación Continua
 
+#### Análisis Exploratorio de Datos
+En este fichero se incluyen un conjunto de diferentes ejercicios para calcular diversas métricas estadísticas y representar algunos gráficos visuales con los que realizar un análisis exploratorio sobre diferentes conjuntos de datos.
+
 #### Regresión
 
 1. En el primer ejercicio el objetivo consiste en analizar el dataset `California` para experimentar con diferentes modelos de Regresión Lineal Simple y Múltiple, añadiendo interacciones y términos no lineales.
@@ -23,5 +26,5 @@
     - Realizar una comparación múltiple entre los algoritmos disponibles KNN, LDA y QDA utilizando el test de Friedman.
     - Aplicar un Post Hoc para intentar averiguar cuál es el algoritmo ganador (aunque el test de Friedman rechace).
 
-### Trabajo teórico-práctico
+### Trabajos teórico-prácticos
 
