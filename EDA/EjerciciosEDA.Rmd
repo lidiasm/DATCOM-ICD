@@ -177,3 +177,57 @@ var_colors<-c("red", "yellow", "green", "cyan", "pink", "gray")
 boxplot(count~spray, insect_sprays, col=var_colors)
 ```
 
+# Carseats dataset
+
+En el primer apartado se propone estudiar el grado de asimetría para cada una de las variables del dataset `Carseats`. Sin embargo, algunas de ellas disponen de valores nominales y por tanto no se puede aplicar la función `skewness` del paquete `moments`. Por ello, las codificaremos como etiquetas numéricas mediante la función `as.numeric`.
+
+```{r}
+# Cargamos el dataset
+library(ISLR)
+carseats <- Carseats
+str(carseats)
+# Codificamos las variables categóricas a etiquetas numéricas
+carseats$ShelveLoc <- as.numeric(carseats$ShelveLoc)
+carseats$Urban <- as.numeric(carseats$Urban)
+carseats$US <- as.numeric(carseats$US)
+str(carseats)
+# Aplicamos la función skewness a cada variable
+library(moments)
+carseats_skewness <- sapply(c(1:ncol(carseats)), function(x) skewness(carseats[,x]))
+carseats_skewness
+# Variables asimétricas por la izquierda (skewness negativo)
+left_skewness <- colnames(carseats)[which(carseats_skewness < -0.5)]
+left_skewness
+# Variables asimétricas por la izquierda (skewness positivo)
+right_skewness <- colnames(carseats)[which(carseats_skewness > 0.5)]
+right_skewness
+```
+
+Como podemos observar en los resultados anteriores, en la **primera lista se encuentran las variables con un grado de asimetría menor que -0.50**, por lo que disponen de colas situadas en la parte izquierda, mientras que en la **segunda lista aparece la única variable con un valor de asimetría mayor de 0.50**, y por ello tiene una menor concentración de datos a la derecha.
+
+A continuación se pretende encontrar qué variables no siguen una distribución normal. Para ello, considerando los resultados anteriores, se representa un **gráfico `QQ` de cada una de las variables anteriores** para estudiar sus cuantiles teóricos y reales.
+
+```{r}
+qqnorm(carseats$ShelveLoc, main="QQ-plot ShelveLoc")
+qqline(carseats$ShelveLoc)
+qqnorm(carseats$Urban, main="QQ-plot Urban")
+qqline(carseats$Urban)
+qqnorm(carseats$US, main="QQ-plot US")
+qqline(carseats$US)
+qqnorm(carseats$Advertising, main="QQ-plot Advertising")
+qqline(carseats$Advertising)
+```
+
+Como podemos apreciar en las tres primeras gráficas, las variables de la primera lista con una asimetría negativa parecen seguir una **distribución bimodal**, puesto que sus cuantiles reales representan una función a trozos. Esto nos indica que pueden existir varios máximos locales pero ninguno global, por lo que se diferencian considerablemente de una distribución normal. En cambio, la variable `Advertising` con una asimetría a la derecha sí parece seguir una distribución normal puesto que sus cuantiles teóricos y reales no son tan diferentes como en los casos anteriores.
+
+Finalmente, a continuación se muestra un gráfico con las **correlaciones entre todas las variables** del dataset. Tal y como se observa, la mayoría de las variables no están relacionadas entre sí puesto que el tono de los colores es muy suave, a excepción de tres casos:
+1. `US` y `Advertising` tienen un coeficiente de correlación de 0.68 por lo que existe una relación positiva y moderadamente fuerte entre sendas variables.
+2. `Price` y `CompPrice` tienen un coeficiente de correlación de 0.58 por lo que también se puede afirmar que están levemente relacionadas de forma positiva entre sí.
+3. `Sales` y `Price` son las dos únicas variables que destacan por su leve correlación negativa con un coeficiente de -0.44.
+
+```{r}
+# Cálculo de las correlaciones entre todas las variables y su representación con un intervalo de colores en la matriz inferior
+library(corrplot)
+corrplot(cor(carseats), method='number', order='alphabet', type='lower')
+```
+
