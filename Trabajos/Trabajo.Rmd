@@ -1,0 +1,88 @@
+---
+title: "Trabajo de Introducción a la Ciencia de Datos"
+author: "Lidia Sánchez Mérida"
+output: pdf_document
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Cargamos las librerías al inicio
+library(car)
+library(tidyverse)
+```
+
+# 1. Apartado de Regresión (abalone)
+
+El dataset con el que se procede a trabajar para este primer apartado relativo a la aplicación de técnicas de Regresión se denomina **`abalone`**. En primer lugar, buscamos información sobre sus datos para descubrir sus características principales y composición. Según la descripción que proporciona [Kaggle](https://www.kaggle.com/rodolfomendes/abalone-dataset), se trata de un conjunto de **medidas físicas realizadas sobre un tipo de molusco para determinar su edad**. Por otro lado, en la página de [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/abalone) se detallan los siguientes aspectos:
+
+* Dispone de un total de **9 variables** de diferente naturaleza:
+
+| Variable | Tipo | Descripción | Valores |
+|---|---|---|---|
+| Sex | Nominal | Género del ejemplar | M (masculino), F (femenino), I (infante) |
+| Length | Real | Longitud de la concha  | Milímetros |
+| Diameter |  Real |  Ancho de la concha |  Milímetros |
+| Height |  Real |  Altura del ejemplar | Milímetros |
+| Whole weight |  Real |  Peso total del ejemplar | Gramos  |
+| Shucked weight |  Real |  Peso del ejemplar sin la concha | Gramos |
+| Viscera weight |  Real |  Peso de las vísceras del ejemplar | Gramos |
+| Shell weight | Real  |  Peso de la concha sin el ejemplar |  Gramos |
+| Rings | Entero  | Edad del animal (+1.5)  |   |
+  
+* Se trata de un conjunto de datos asociado a un problema de clasificación.
+* **No contiene valores perdidos o nulos**.
+
+## 1.1. Análisis Exploratorio de Datos
+
+A continuación, en este subapartado estudiaremos el dataset en mayor profundidad. En primer lugar cargamos el dataset desde el fichero `abalone.dat`, especificamos el separador para distinguir los valores de cada columna y asignamos manualmente el nombre de las variables a partir de la líneas `@inputs` y `@outputs` del fichero. Como podemos apreciar en el siguiente *chunk* este dataset cuenta con **4.177 registros y 9 variables**. En el caso de la columna que indica el género podemos apreciar que ya está codificada en este fichero, por lo que asumiremos que las etiquetas numéricas corresponden a los siguientes valores nominales:
+
+* 1: masculino.
+* 2: femenino.
+* 3: infante.
+
+```{r}
+# Nombres de las variables según el fichero `abalone.data`
+abalone.colnames <- c("Sex", "Length", "Diameter", "Height", "Whole_weight", 
+                  "Shucked_weight", "Viscera_weight", "Shell_weight", "Ring")
+# Leemos el dataset del fichero `abalone.dat`
+abalone.df <- read.table("./abalone/abalone.dat", header=FALSE, skip=13, 
+                         sep=",", col.names=abalone.colnames)
+# Dimensión 
+dim(abalone.df)
+# Tipos de las variables
+str(abalone.df)
+```
+A continuación aplicamos la función `summary` para obtener un resumen con las principales medidas matemáticas y estadísticas para cada variable. 
+
+```{r}
+# Resumen del dataset
+summary(abalone.df)
+```
+* Como se ha comentado anteriormente, la variable `Sex` contiene las codificaciones numéricas de los valores nominales detallados anteriormente. En este resumen, podemos observar que tanto la media como la mediana prácticamente coinciden indicando que hay una **mayor presencia de ejemplares femeninos** que del resto de géneros.
+* La variable `Length` oscila en un rango de valores [0.075, 0.815] por lo que podemos observar que, por su media y mediana, la mayoría de los ejemplares de este molusco tienen una **longitud considerable**.
+* La variable `Diameter` dispone de un rango de valores [0.055, 0.65] y su caso es similar anterior, puesto que su media y mediana rozan los 0.40 milímetros aproximadamente, por lo que la mayoría de ejemplares tienen un **diámetro bastante amplio**.
+* En la variable `Height` el intervalo de valores es [0, 1.13] y, según su media y mediana, la mayoría de los ejemplares tienen una altura aproximada de 0.14 milímetros, por lo que se podría considerar considerablemente pequeña Sin embargo, me parece extraño que existan medidas que indiquen una **altura de 0 milímetros**. Se postula como uno de los aspectos para los estudios posteriores.
+* Para la variable `Whole_weight` su intervalo de valores [0.002, 2.8255], uno de los más amplios de este dataset. Su media y mediana coinciden en que la mayoría de ejemplares disponen de un peso total de 0.8 gramos aproximadamente. Este dato me extraña particularmente debido al resto de medidas anteriores, puesto que **a pesar de tener una considerable longitud y diámetro, no parecen tener un peso acorde**. Será otro de los aspectos que deberemos de analizar.
+* `Shucked_weight`. En este caso el intervalo de esta variable es [0.001, 1.488], siendo el peso sin concha de la mayoría de ejemplares en torno a 0.33 gramos. Según el rango de valores, este peso se podría considerar razonablemente inferior, por lo que **podría explicar el extráñamente bajo peso total** que hemos observado en la variable anterior.
+* `Viscera_weight`. Su rango de valores se encuentra en torno a [0.0005, 0.76], con un valor medio aproximado de 0.17 gramos, el cual se puede estimar como **la mitad del peso anterior** referente al ejemplar sin concha.
+* `Shell_weight`. En el caso de esta variable sus datos se encuentran en el intervalo [0.0015, 1.005] además de una valor medio aproximado de 0.23 gramos. Considerando el rango de valores, podemos determinar que la **mayoría de ejemplares disponen de una concha de tamaño pequeño**, lo cual apoya las hipótesis anteriores de los pesos medios tan bajos. 
+* `Ring`. La variable independiente cuenta con un rango de valores de números enteros [1, 29], otro de los intervalos más amplios del conjunto. Sin embargo, la edad media se encuentra en torno a los 9-10, por lo que podemos intuir que el conjunto de datos recopila muestras de **ejemplares muy jóvenes**. 
+
+A partir de este primer resumen estadístico, podemos extraer las siguientes conclusiones:
+
+1. Parece haber un mayor número de medidas asociadas a ejemplares femeninos, por lo que podría existir un **desbalanceamiento de la clase `Sex`**.
+
+2. En la mayoría de ejemplares, a pesar de disponer de una concha con amplia longitud y un elevado diámetro, las diferentes medida de peso son considerablemente bajas. Esto puede ser explicado por la edad almacenada en `Ring`, cuya media es considerablemente inferior según su intervalo de valores, según hemos podido observar. Adicionalmente, este **conjunto de datos puede estar "sobre-representado" por ejemplares jóvenes**, lo cual podría afectar a la generalización de los futuros modelos si no existen suficientes muestras del resto de edades.
+
+### 1.1.1. Análisis Multivariante
+
+* ScatterplotMatrix de todo para ver cómo se relacionan
+* Análisis del sexo.
+* Análisis de la edad.
+
+```{r}
+scatterplotMatrix(abalone.df, diagonal="histogram", smoother=NULL, col=)
+```
+
