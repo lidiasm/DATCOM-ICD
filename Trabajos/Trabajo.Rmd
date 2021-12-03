@@ -7,10 +7,14 @@ urlcolor: blue
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# Librerías necesarias 
+require(car)
+require(tidyverse)
+require(psych)
 
-# Cargamos las librerías al inicio
 library(car)
 library(tidyverse)
+library(psych)
 ```
 
 # 1. Apartado de Regresión (abalone)
@@ -34,7 +38,7 @@ El dataset con el que se procede a trabajar para este primer apartado relativo a
 * Se trata de un conjunto de datos asociado a un problema de clasificación.
 * **No contiene valores perdidos o nulos**.
 
-## 1.1. Análisis Exploratorio de Datos
+## 1.1. Análisis Exploratorio de Datos General
 
 A continuación, en este subapartado procedemos a analizar las principales propiedades de este conjunto de datos. En primer lugar cargamos el dataset desde el fichero `abalone.dat`, especificamos el separador para distinguir los valores de cada columna y asignamos manualmente el nombre de las variables a partir de la líneas `@inputs` y `@outputs` del fichero. Como podemos apreciar en el siguiente *chunk* este dataset cuenta con **4.177 registros y 9 variables**. En el caso de la columna que indica el **género podemos apreciar que ya está codificada en este fichero**, por lo que asumiremos que las etiquetas numéricas corresponden a los siguientes valores nominales: 1-masculino, 2-femenino y 3-infante.
 
@@ -66,7 +70,93 @@ En el caso de las medidas relativas a los diferentes tipos de pesos, parece habe
 
 Finalmente, cabe destacar que en la variable independiente `Ring` tampoco existe una diferencia considerable entre sus cuartiles, y su media y mediana son valores cercanos al mínimo, por lo que parece que en el conjunto de datos hay una **mayor representación de ejemplares jóvenes**. 
 
-### 1.1.1. Análisis Multivariante
+### 1.1.1. Hipótesis Iniciales
+
+En función de los resultados obtenidos anteriormente con el resumen estadístico del dataset, procedemos a plantear un conjunto de hipótesis iniciales acerca de las muestras, los predictores y la variable independiente.
+
+1. En primer lugar, parece que existen un **número similar de ejemplares para cada género**, por lo que las clases de la variable `Sex` estarían balanceadas. Sin embargo, este predictor **no creo que aporte información útil** para predecir la variable `Ring` puesto que el género es independiente a la edad.
+
+2. Existen una **concentración de ejemplares con conchas de gran tamaño** según los valores estadísticos de las variables `Length` y `Diameter`. A diferencia del caso anterior, estos predictores sí creo que influyan en la variable independiente puesto que es lógico que un **ejemplar aumente su envergadura conforme aumente su edad**. Asimismo, también pienso que ambas variables van a estar relacionadas ya que también es lógico pensar que **a mayor longitud de la concha, mayor diámetro**, por lo que deberemos analizar sus coeficientes de correlación y seleccionar aquella que maximice la variabilidad de información para la construcción de los modelos. 
+
+3. En la variable `Height` se observa una concentración de **ejemplares con alturas extremadamente bajas, incluso de 0 milímetros**. Por un lado, me parece extraño este último dato puesto que, independientemente de la edad, no me parece que tenga sentido un valor de 0 en una medida física. Por otro lado, también me extraña que la cantidad de **ejemplares de poca altura en comparación con los considerables tamaños de sus conchas**. A mi parecer, en el primer caso podemos encontrarnos con medidas erróneas, mientras que con respecto a la segunda observación, pienso que este tipo de especie puede estar caracterizada por un grosor muy fino. Sin embargo, mi hipótesis inicial es que este predictor **no va a aportar demasiada información útil** como para ayudar a la predicción de la edad.
+
+4. Las variables relativas a las diferentes medidas de peso disponen de un rango más amplio de valores, con una **concentración de ejemplares de poco peso**. Este hecho me resulta extraño puesto que, como se ha comentado anteriormente, el tamaño de sus conchas es considerablemente grande, por lo que **cabría esperar que sus pesos también fueran mayores**. Por otro lado, creo que pueden existir las siguientes relaciones entre este tipo de predictores.
+
+    * Todos los pesos particulares a una zona del ejemplar pueden estar relacionados linealmente con la variable que representa el peso total `Whole_weight`, por lo que puede ser lógico pensar que conforme **aumenten los pesos específicos, también aumente el peso general**. Por lo que será esencial visualizar sus coeficientes de correlación para no incluir variables correlacionadas que influyan sobre los modelos de regresión.
+  
+    * Las variables `Shucked_weight` y `Viscera_weight` pueden estar relacionadas linealmente puesto que me parece lógico pensar que si **aumenta el peso de los órganos de un ejemplar, también aumente de peso el propio animal**. Como consecuencia, deberemos considerar la correlación entre sendas variables antes del entrenamiento de los modelos.
+  
+5. Finalmente, cabe destacar que parece haber una **mayor representación de ejemplares jóvenes que de otras edades**. Este hecho puede suponer un problema en caso de que las características físicas varíen en función de la edad, puesto que si existen pocos ejemplares de mayor edad, los modelos pueden no aprender suficientemente bien los rasgos característicos como para identificar a las futuras muestras más mayores.
+
+## 1.2. Análisis Exploratorio Univariantes
+
+El objetivo de esta sección es realizar un estudio en detalle de cada una de las variables que componen este dataset para comprobar sus características principales, dependiendo de la naturaleza de sus valores. En el caso de las **variables nominales se pretende analizar el balanceamiento de sus clases** a través de gráficos de barras que representen la frecuencia de cada categoría. Mientras que para **variables escalares se realizarán análisis estadísticos sobre la varianza, desviación típica, grado de asimetría, tipo de curtosis y distribución**.
+
+### 1.2.1. Variables nominales
+
+En el caso de este dataset, la **única variable nominal es `Sex`**. Por ello, en este primer gráfico de barras se pretende mostrar el número de ejemplares de cada uno de los géneros disponibles en este dataset: masculino (1), femenino (2) e infante (3). Nuestra **hipótesis inicial afirma que las clases están balanceadas**, por lo que el número de muestras de cada clase no debería de variar demasiado. Y tal y como podemos observar, podemos **aceptar dicha hipótesis** puesto que existen 1528 muestras masculinas, 1307 femeninas y 1342 ejemplares infantes, es decir, las diferentes categorías disponen de una representación razonablemente equivalente.
+
+```{r}
+# Definimos los géneros disponibles
+genders <- c("Masculino", "Femenino", "Infante")
+# Parámetros:
+# 1. Convertimos las etiquetas a factores para obtener la frecuencia por clase
+# 2. Contorno negro a las barras y la leyenda
+# 3. Fondo blanco
+# 4. Ocultamos la etiqueta del eje X y establecemos la etiqueta del eje Y
+# 5. Frecuencia de cada clase sobre sus respectivas barras
+ggplot(abalone.df, aes(x=factor(Sex), fill=factor(Sex))) + 
+  geom_bar(color="black") + theme_minimal() + 
+  scale_fill_discrete(name='Géneros', labels=genders) + 
+  labs(x="", y="Frecuencias") + 
+  geom_text(stat='count', aes(label=..count..), vjust=2)
+```
+
+### 1.2.2. Variables numéricas
+
+A continuación se calculan las medidas estadísticas mencionadas anteriormente para las restantes variables numéricas de este dataset. Para calcular la varianza se utiliza la función `var` aplicada a cada uno de los predictores, mientras que para la **desviación típica, grado de asimetría y curtosis se hace uso de la función `describe` del paquete `psych`**. Finalmente, con el objetivo de mostrar los resultados organizadamente, se define un `dataframe` cuyas columnas representan los cálculos realizados y cuyas filas indican los predictores asociados.
+
+```{r}
+# Cálculo de la varianza para cada variable numérica
+abalone.vars <- sapply(c(2:ncol(abalone.df)), function(x) var(abalone.df[,x]))
+# Cálculo de la desviación típica, asimetría y curtosis
+abalone.statistics <- data.frame(describe(abalone.df%>%select(-Sex)))
+# Dataframe con todas las medidas estadísticas por variable numérica
+abalone.statistics <- abalone.statistics %>% select(c('sd', 'skew', 'kurtosis'))
+cbind(var=abalone.vars, abalone.statistics)
+```
+
+Como podemos observar en los resultados, **los predictores disponen de una varianza mínima** puesto que sus valores se encuentran muy cercanos a 0. Este hecho nos indica que existe **muy poca variabilidad en sus valores**. En combinación con esta medida estadística, podemos observar que la desviación estándar también es bastante baja, lo cual indica que los valores de los **predictores se encuentran muy cercanos a la media**. La única excepción es la variable independiente `Ring` cuya varianza y desviación típica son más elevadas ya que existe una variedad de ejemplares de diferentes edades.
+
+En relación con la forma de la distribución, podemos apreciar que la **mayoría de variables disponen de un grado de asimetría superior a 0.5**. Este hecho nos indica que tanto los predictores como la variable independiente tienen desiguales concentraciones de valores en zonas específicas de sus intervalos. En particular, todas las **medidas relativas al peso se encuentran encoladas a la derecha** puesto que su grado de asimetría es positivo. Mientras que las **medidas relativas al tamaño de la concha, como `Length` y `Diameter`, están encoladas a la izquierda** por sus coeficientes negativos. Los casos de la **variable independiente y del predictor `Height`** destacan sobre los restantes puesto que sus coeficiente son mayores que 1, lo cual indica que están caracterizadas por una **fuerte asimetría, especialmente en la variable dependiente**. 
+
+Situaciones similares ocurren con los **coeficientes de curtosis**, que indican la forma de las colas asociadas a las distribuciones de cada variable. La mayoría de estos valores son se encuentran en el intervalo [-0.05, 0.6], lo cual afirma que muchos predictores disponen de concentraciones menores de datos en los extremos, pero al tratarse de **valores cercanos a 0 podemos intuir que siguen una distribución similar a la Gaussiana**. Sin embargo, esto no es aplicable ni a la variable **`Height`, cuyo coeficiente es muy elevado, ni al término independiente `Ring` cuyo valor también se aleja bastante de 0**. En el primer caso, la distribución del predictor estará caracterizada por una considerable concentración de valores en un intervalo muy reducido, mostrando un gran pico, mientras que para la variable `Ring` dicha acumulación de datos no será tan masiva pero también seguirá una forma similar.
+
+Para finalizar el estudio de las variables numéricas, a continuación procedemos a **comprobar si siguen una distribución normal**. Para ello vamos a experimentar con dos metodologías diferentes, una gráfica y otra estadística. En el primer caso vamos a hacer uso de los **gráficos QQ únicamente sobre las variables `Height` y `Ring`**, puesto que son las más peculiares según los resultados proporcionados en este estudio. Sin embargo, para confirmar la normalidad de cada variable se aplicará un test estadístico específico para esta cualidad: el **test de Shapiro-Wilk’s**. La hipótesis nula que se establece es que la variable sigue una distribución normal, frente a la alternativa en la que se afirma que no sigue una distribución normal. Por lo tanto, si el test rechaza, es decir, obtiene un `p-valor` menor que el umbral=0.05, podemos determinar estadísticamente que la variable analizada no sigue una distribución normal.
+
+```{r}
+# Gráfico QQ para la variable dependiente `Height`
+qqnorm(abalone.df$Height, main="Gráfico QQ de Height")
+qqline(abalone.df$Height)
+# Gráfico QQ para la variable independiente `Ring`
+qqnorm(abalone.df$Ring, main="Gráfico QQ de Ring")
+qqline(abalone.df$Ring)
+```
+
+Tal y como podemos apreciar en el primer gráfico QQ asociado a `Height`, los cuantiles teóricos y empíricos coinciden prácticamente al 100%, a excepción de dos casos. Como consecuencia, este predictor tiene altas probabilidades de **seguir una distribución normal**. No obstante, el caso de la variable independiente es diferente, puesto que parece haber una menor coincidencia entre ambas medidas, lo cual puede significar que la variable **`Ring` parece no seguir una distribución normal**. 
+
+Antes de aplicar el test de Shapiro-Wilk’s sobre cada variable, mi hipótesis es que todas las variables parecen seguir una distribución normal, a excepción del término independiente `Ring`. Como se realizó anteriormente, a continuación se presentan los resultados de los tests en un `dataframe` para vincular cada variable con el `p-valor` resultante al aplicar este test de normalidad. Como podemos apreciar en los siguientes resultados, **todos los tests han rechazado la hipótesis nula** puesto que en todos se obtienen `p-valores` menores que el umbral establecido en 0.05. Esto significa que **ninguna de las variables sigue una distribución normal**, lo cual aumenta la importancia de utilizar tests estadísticos en lugar de métodos gráficos que pueden inducirnos a errores.
+
+```{r}
+# Aplicamos el test de Shapiro-Wilk’s para cada variable extrayendo el p-valor
+abalone.shapiros <- sapply(c(1:ncol(abalone.df)), 
+                     function(x) shapiro.test(abalone.df[,x])$p.value)
+# Definimos un dataframe con los resultados para cada variable
+abalone.shapiros.df <- data.frame(Variables=colnames(abalone.df), 
+                                  PValores=abalone.shapiros)
+abalone.shapiros.df
+```
+## 1.3. Análisis Exploratorio Multivariante
 
 En esta sección se pretenden realizar diversos análisis considerando la gran mayoría de variables con el objetivo de formar una idea generalizada de este conjunto de datos. Así, en primer lugar vamos a representar una **matriz de puntos con todas las variables disponibles**. En la diagonal se ha elegido representar las **curvas de densidad para visualizar sus respectivas distribuciones**. Aunque la aplicación de este tipo de gráfico no tenga sentido sobre una variable de clase, como es `Sex`, la incluimos para observar las características de cada categoría y aplicar un **filtro por género** con el que representar cada clase de un color y formas diferentes. De este modo, enriquecemos el gráfico con más información y nos permite comenzar a constrastar las conclusiones obtenidas anteriormente.
 
@@ -86,14 +176,15 @@ scatterplotMatrix(abalone.df, diagonal=list(method="density"),
                   upper.panel=NULL, col=c("blue", "orange", "gray"),
                   group=as.factor(abalone.df$Sex))
 ```
+
 La segunda parte de este estudio consiste en analizar las posibles relaciones entre diversos pares de variables. Tal y como podemos observar, parece ser que **la longitud está relacionada linealmente con el diámetro** de la concha, puesto que su gráfica asociada prácticamente representa una recta estrictamente creciente. Por lo que a mayor longitud de la concha, mayor diámetro, algo que puede parecer bastante lógico. Una situación similar ocurre con el resto de variables, ya que en todas las gráficas relacionadas con la variable `Length` se puede visualizar una función creciente, siendo de menor intensidad en el caso de la variable `Height`, cuya representación se parece más a una raíz cuadrada. Todas estas conclusiones parecen ser aplicables también a la variable `Diameter` puesto que las gráficas con el resto de variables son muy similares. Continuando con los diferentes pesos también podemos observar que se encuentran relacionados entre sí de forma creciente, por lo que podemos intuir que **durante el desarrollo de los ejemplares sus diferentes medidas de peso siguen una misma tendencia a la alza**. 
 
 Un caso peculiar lo encontramos entre la variable `Height` y las variables asociadas a los diferentes pesos. Si observamos sus gráficas, podemos apreciar un crecimiento muy considerable y abrupto al comienzo del intervalo, es decir, existe una concentración de **ejemplares con una elevada altura y bajos pesos**. Sin embargo, a diferencia del resto de gráficas, en estos casos podemos observar que existen varias muestras que no siguen esta tendencia, ya que sus alturas disminuyen conforme aumentan sus pesos. 
 
 Finalmente, si observamos la variable independiente `Ring` podemos apreciar que es creciente con respecto a la longitud y diámetro, por lo que parece que los ejemplares de **mayor edad, tienen una concha de mayor longitud y diámetro**. Con respecto a los pesos hay una mayor variabilidad, aunque en el caso del peso asociado a la concha sí se aprecia un aumento de sus valores conforme mayor es la edad. Sin embargo, en las restantes variables podemos observar que existen diferencias entre los distintos géneros. Mientras que la tendencia de los infantes en todas las variables de pesos se mantiene creciente, existen ejemplares masculinos y femeninos cuyos tamaños se estabilizan e incluso se reducen conforme aumenta la edad.
 
-#### Conclusiones
-
-<<<<<<<<<<<<<<<<<<<< CONCLUSIONES>>>>>>>>>>>>>>>>>>>>>>>
-<<<<<<<<<<<<<<<<<<<<< CORRELACIÓN>>>>>>>>>>>>>>>>
+CONTINUAR CON
+1. Correlaciones.
+2. Boxplot.
+3. 
 
