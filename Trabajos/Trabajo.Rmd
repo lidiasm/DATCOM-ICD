@@ -82,21 +82,21 @@ Finalmente, cabe destacar que en la variable independiente `Ring` tampoco existe
 
 En función de los resultados obtenidos anteriormente con el resumen estadístico del dataset, procedemos a plantear un conjunto de hipótesis iniciales acerca de las muestras, los predictores y la variable independiente.
 
-1. En primer lugar, parece que existen un **número similar de ejemplares para cada género**, por lo que las clases de la variable `Sex` estarían balanceadas. Sin embargo, este predictor **no creo que aporte información útil** para predecir la variable `Ring` puesto que el género es independiente a la edad.
+1. En primer lugar, parece que existen un **número similar de ejemplares para cada género**, por lo que las clases de la variable `Sex` estarían balanceadas. Creo que esta variable puede ayudar a determinar los ejemplares más jóvenes gracias a la categoría infante. Sin embargo, no tengo claro qué papel podría jugar para el resto de clases.
 
-2. Existen una **concentración de ejemplares con conchas de gran tamaño** según los valores estadísticos de las variables `Length` y `Diameter`. A diferencia del caso anterior, estos predictores sí creo que influyan en la variable independiente puesto que es lógico que un **ejemplar aumente su envergadura conforme aumente su edad**. Asimismo, también pienso que ambas variables van a estar relacionadas ya que también es lógico pensar que **a mayor longitud de la concha, mayor diámetro**, por lo que deberemos analizar sus coeficientes de correlación y seleccionar aquella que maximice la variabilidad de información para la construcción de los modelos. 
+2. Existen una **concentración de ejemplares con conchas de gran tamaño** según los valores estadísticos de las variables `Length` y `Diameter`. Estos predictores pueden influir en la variable independiente puesto que es lógico que un **ejemplar aumente su envergadura conforme aumente su edad**. Asimismo, también pienso que ambas variables van a estar relacionadas ya que también es lógico pensar que **a mayor longitud de la concha, mayor diámetro**, por lo que deberemos analizar sus coeficientes de correlación y seleccionar aquella que maximice la variabilidad de información para la construcción de los modelos. 
 
-3. En la variable `Height` se observa una concentración de **ejemplares con alturas extremadamente bajas, incluso de 0 milímetros**. Por un lado, me parece extraño este último dato puesto que, independientemente de la edad, no me parece que tenga sentido un valor de 0 en una medida física. Por otro lado, también me extraña que la cantidad de **ejemplares de poca altura en comparación con los considerables tamaños de sus conchas**. A mi parecer, en el primer caso podemos encontrarnos con medidas erróneas, mientras que con respecto a la segunda observación, pienso que este tipo de especie puede estar caracterizada por un grosor muy fino. Sin embargo, mi hipótesis inicial es que este predictor **no va a aportar demasiada información útil** como para ayudar a la predicción de la edad.
+3. En la variable `Height` se observa una concentración de **ejemplares con alturas extremadamente bajas, incluso de 0 milímetros**. Por un lado, me parece extraño este último dato puesto que, independientemente de la edad, no me parece que tenga sentido un valor de 0 en una medida física. Por otro lado, también me extraña la cantidad de **ejemplares de poca altura, en comparación con los considerables tamaños de sus conchas**. A mi parecer, en el primer caso podemos encontrarnos con medidas erróneas, mientras que con respecto a la segunda observación, pienso que este tipo de especie puede estar caracterizada por tener un grosor muy fino. Sin embargo, no consigo visualizar la importancia que puede jugar esta variable en la predicción de la edad de los ejemplares de esta especie.
 
 4. Las variables relativas a las diferentes medidas de peso disponen de un rango más amplio de valores, con una **concentración de ejemplares de poco peso**. Este hecho me resulta extraño puesto que, como se ha comentado anteriormente, el tamaño de sus conchas es considerablemente grande, por lo que **cabría esperar que sus pesos también fueran mayores**. Por otro lado, creo que pueden existir las siguientes relaciones entre este tipo de predictores.
 
-    * Todos los pesos particulares a una zona del ejemplar pueden estar relacionados linealmente con la variable que representa el peso total `Whole_weight`, por lo que puede ser lógico pensar que conforme **aumenten los pesos específicos, también aumente el peso general**. Por lo que será esencial visualizar sus coeficientes de correlación para no incluir variables correlacionadas que influyan sobre los modelos de regresión.
+    * Todos los pesos particulares a una zona del ejemplar pueden estar relacionados linealmente con la variable que representa el peso total `Whole_weight`, por lo que puede ser lógico pensar que conforme **aumenten los pesos específicos, también aumente el peso general**. Esta teoría se podrá confirmar visualizando sus coeficientes de correlación.
   
-    * Las variables `Shucked_weight` y `Viscera_weight` pueden estar relacionadas linealmente puesto que me parece lógico pensar que si **aumenta el peso de los órganos de un ejemplar, también aumente de peso el propio animal**. Como consecuencia, deberemos considerar la correlación entre sendas variables antes del entrenamiento de los modelos.
+    * Las variables `Shucked_weight` y `Viscera_weight` pueden estar relacionadas linealmente puesto que me parece lógico pensar que si **aumenta el peso de los órganos de un ejemplar, también aumente de peso el propio animal**. De igual modo, esta hipótesis podrá comprobarse mediante un gráfico de correlaciones.
   
-5. Finalmente, cabe destacar que parece haber una **mayor representación de ejemplares jóvenes que de otras edades**. Este hecho puede suponer un problema en caso de que las características físicas varíen en función de la edad, puesto que si existen pocos ejemplares de mayor edad, los modelos pueden no aprender suficientemente bien los rasgos característicos como para identificar a las futuras muestras más mayores.
+5. Finalmente, cabe destacar que parece haber una **mayor representación de ejemplares jóvenes que de otras edades**. Este hecho puede suponer un problema en caso de que las características físicas varíen en función de la edad, puesto que si existen pocos ejemplares de mayor edad, los modelos pueden no aprender suficientemente bien los rasgos característicos de cada generación como para identificar a las futuras muestras más mayores.
 
-## 1.2. Análisis Exploratorio Univariantes
+## 1.2. Análisis Exploratorios Univariantes
 
 El objetivo de esta sección es realizar un estudio en detalle de cada una de las variables que componen este dataset para comprobar sus características principales, dependiendo de la naturaleza de sus valores. En el caso de las **variables nominales se pretende analizar el balanceamiento de sus clases** a través de gráficos de barras que representen la frecuencia de cada categoría. Mientras que para **variables escalares se realizarán análisis estadísticos sobre la varianza, desviación típica, grado de asimetría, tipo de curtosis y distribución**.
 
@@ -226,6 +226,7 @@ var_colors<-c("red", "yellow", "orange", "green", "cyan", "blue", "pink", "purpl
 # Diagrama de cajas para cada variable
 boxplot(abalone.df %>% select(-Sex), notch=TRUE, col=var_colors)
 ```
+
 ## 1.4. Modelos de Regresión 
 
 En este segundo apartado se pretende construir diferentes modelos aplicando diversas técnicas de Regresión para intentar maximizar el número de aciertos en la tarea de predecir la variable `Ring` en este dataset.
@@ -338,7 +339,9 @@ Realizando varios experimentos que no se incluyen en esta memoria para no extend
 
 ```{r}
 # Séptimo modelo: términos cuadráticos de Shucked_weight y Whole_weight
-abalone.lm7 <- lm(Ring~.-Length -Viscera_weight -Sex + Shell_weight*Diameter +  I(Shucked_weight^2) + I(Whole_weight^2), data=abalone.df)
+abalone.lm7 <- lm(Ring~.-Length -Viscera_weight -Sex + 
+                    Shell_weight*Diameter +  I(Shucked_weight^2) + 
+                    I(Whole_weight^2), data=abalone.df)
 summary(abalone.lm7)
 ```
 En comparación con el modelo obtenido mediante Regresión Lineal Simple, podemos observar que ha **aumentado la explicabilidad en más de un 16%, mientras que se reduce el error en 0.36 décimas**. Como principal desventaja se encuentra el aumento de la complejidad del modelo, puesto que en el múltiple intervienen cinco predictores, una interacción y dos términos cuadráticos, mientras que en el modelo simple solo uno.
@@ -351,10 +354,11 @@ En esta sección se pretende entrenar varios modelos utilizando el **algoritmo K
 # Función para aplicar validación cruzada para entrenar y validar 5
 # modelos con el algoritmo KNN y la formulación del mejor modelo de
 # Regresión Lineal Múltiple.
-# Fórmula original: Ring~.-Length -Viscera_weight -Sex + Shell_weight*Diameter +        I(Shucked_weight^2
+# Fórmula original: Ring~.-Length -Viscera_weight -Sex 
+# + Shell_weight*Diameter +        I(Shucked_weight^2
 # Fórmula para la función: -X2 -X7 -X1 + X8*X3 +  I(X6^2) + I(X5^2)
 nombre <- "abalone"
-run_knn_fold <- function(i, x, tt = "test") {
+run_knn_fold <- function(i, x, tt = "test", formula = "all") {
   file <- paste(x, "-5-", i, "tra.dat", sep="")
   x_tra <- read.csv(paste("./abalone/", file, sep=""), 
                     comment.char="@", header=FALSE)
@@ -372,18 +376,111 @@ run_knn_fold <- function(i, x, tt = "test") {
   else {
     test <- x_tst
   }
-  fitMulti <- kknn(Y~.-X2 -X7 -X1 + X8*X3 +  I(X6^2) + I(X5^2), x_tra, test)
+  # Entrena un modelo con todas las variables
+  if (formula == "all") {
+    fitMulti <- kknn(Y~., x_tra, test)
+  }
+  # Entrena un modelo con la fórmula del mejor modelo de Regresión
+  # Lineal Múltiple
+  else {
+    fitMulti <- kknn(Y~.-X2 -X7 -X1 + X8*X3 +  I(X6^2) + I(X5^2), x_tra, test)
+  }
   yprime <- fitMulti$fitted.values
   sum(abs(test$Y-yprime)^2)/length(yprime) ##MSE
 }
+# Media del error para entrenamiento y validación de los modelos de KNN
+# con la fórmula del mejor modelo con Regresión Lineal Múltiple
+knnMSEtrain <- mean(sapply(1:5, run_knn_fold, nombre, "train", "RLM"))
+knnMSEtrain
+knnMSEtest <- mean(sapply(1:5, run_knn_fold, nombre, "test", "RLM"))
+knnMSEtest
+```
+Como podemos observar, el **error obtenido en el conjunto de entrenamiento es mayor que el del mejor modelo con Regresión Lineal Múltiple**. Esto demuestra que no siempre una misma formulación proporciona buenos resultados para algoritmos diferentes, como ha sido esta comparación entre KNN y Regresión Lineal Múltiple. 
+
+## 1.5. Comparación de algoritmos
+
+Para finalizar este apartado de regresión se pretende realizar una comparación entre el comportamiento de diversos algoritmos sobre diferentes datasets. En primer lugar, aplicamos la Validación Cruzada para entrenar **cinco modelos con Regresión Lineal Múltiple y otros cinco con el algoritmo KNN**, tal y como se realizó en la sección anterior, solo que en este caso **se consideran todos los predictores**. 
+
+```{r}
+# Función para aplicar validación cruzada para entrenar y validar 5
+# modelos con Regresión Lineal Múltiple
+nombre <- "abalone"
+run_lm_fold <- function(i, x, tt = "test", formula = "all") {
+  file <- paste(x, "-5-", i, "tra.dat", sep="")
+  x_tra <- read.csv(paste("./abalone/", file, sep=""), 
+                    comment.char="@", header=FALSE)
+  file <- paste(x, "-5-", i, "tst.dat", sep="")
+  x_tst <- read.csv(paste("./abalone/", file, sep=""), 
+                    comment.char="@", header=FALSE)
+  In <- length(names(x_tra)) - 1
+  names(x_tra)[1:In] <- paste ("X", 1:In, sep="")
+  names(x_tra)[In+1] <- "Y"
+  names(x_tst)[1:In] <- paste ("X", 1:In, sep="")
+  names(x_tst)[In+1] <- "Y"
+  if (tt == "train") {
+    test <- x_tra
+  }
+  else {
+    test <- x_tst
+  }
+  fitMulti=lm(Y~.,x_tra)
+  yprime=predict(fitMulti,test)
+  sum(abs(test$Y-yprime)^2)/length(yprime) ##MSE
+}
+# Media del error de entrenamiento y validación para los modelos de 
+# Regresión Lineal Múltiple considerando todas las variables
+lmMSEtrain<-mean(sapply(1:5,run_lm_fold,nombre,"train"))
+lmMSEtrain
+lmMSEtest<-mean(sapply(1:5,run_lm_fold,nombre,"test"))
+lmMSEtest
+# Media del error de entrenamiento y validación para los modelos con 
+# KNN considerando todas las variables
 knnMSEtrain <- mean(sapply(1:5, run_knn_fold, nombre, "train"))
 knnMSEtrain
 knnMSEtest <- mean(sapply(1:5, run_knn_fold, nombre, "test"))
 knnMSEtest
 ```
-Como podemos observar, el **error obtenido en el conjunto de entrenamiento es mayor que el del mejor modelo con Regresión Lineal Múltiple**. Esto demuestra que no siempre una misma formulación proporciona buenos resultados para algoritmos diferentes, como ha sido esta comparación entre KNN y Regresión Lineal Múltiple. 
+Una vez disponemos de los errores medios de entrenamiento y validación para cada técnica, los sustituimos en los ficheros `regr_train_alumnos.csv` y `regr_test_alumnos.csv` donde se encuentran los resultados para el dataset `abalone`. A continuación, cargamos la información de sendos archivos para comenzar a realizar las comparaciones estadísticas. En primer lugar, enfrentamos los algoritmos **Regresión Lineal Múltiple y KNN utilizando el test de Wilcoxon** con el objetivo de conocer si existen diferencias significativas entre sendas técnicas. La hipótesis nula afirma que ambos algoritmos se comportan de forma semejante, mientras que la alternativa determina que no son iguales. 
 
-### 1.4.4. Comparación de algoritmos
+```{r}
+# Leemos los resultados sobre el conjunto de entrenamiento
+resultados <- read.csv("regr_train_alumnos.csv")
+tablatra <- cbind(resultados[,2:dim(resultados)[2]])
+colnames(tablatra) <- names(resultados)[2:dim(resultados)[2]]
+rownames(tablatra) <- resultados[,1]
+# Leemos los resultados sobre el conjunto de test
+resultados <- read.csv("regr_test_alumnos.csv")
+tablatst <- cbind(resultados[,2:dim(resultados)[2]])
+colnames(tablatst) <- names(resultados)[2:dim(resultados)[2]]
+rownames(tablatst) <- resultados[,1]
 
+# Normalizamos la tabla de resultados de tests para Wilcoxon
+# ""+ 0.1 porque wilcox R falla para valores == 0 en la tabla""
+difs <- (tablatst[,1] - tablatst[,2]) / tablatst[,1]
+wilc_1_2 <- cbind(ifelse (difs<0, abs(difs)+0.1, 0+0.1), 
+                  ifelse (difs>0, 	abs(difs)+0.1, 0+0.1))
+colnames(wilc_1_2) <- c(colnames(tablatst)[1], colnames(tablatst)[2])
+head(wilc_1_2)
+# Aplicamos el test de Wilcoxon sobre Regresión Lineal Múltiple y KNN
+LMvsKNNtst <- wilcox.test(wilc_1_2[,1], wilc_1_2[,2], 
+                          alternative = "two.sided", paired=TRUE)
+Rmas <- LMvsKNNtst$statistic
+pvalue <- LMvsKNNtst$p.value
+LMvsKNNtst <- wilcox.test(wilc_1_2[,2], wilc_1_2[,1], 
+                          alternative = "two.sided", paired=TRUE)
+Rmenos <- LMvsKNNtst$statistic
+pvalue
+```
+Como podemos apreciar, el p-valor resultante de aplicar el test de Wilcoxon es mayor que el umbral 0.05, por lo que nos revela que **no se puede rechazar la hipótesis nula** de que el algoritmo KNN tiene el mismo comportamiento que Regresión Lineal Múltiple sobre los datasets experimentados Así, se puede determinar que solo existe un 23.4% de confianza de que sean distintos. 
 
+A continuación, **añadimos el algoritmo M5 a la comparación. Para ello aplicamos el test de Friedman**, que extiende el objetivo del test de Wilcoxon pero a un número mayor de dos muestras. Tal y como se puede observar en los resultados, el p-valor resultante no es menor que el umbral prefijado de 0.05, por lo que **tampoco se puede rechazar la hipótesis nula de que los tres algoritmos tienen el mismo comportamiento**. Para determinar cuáles pueden ser los algoritmos que destaquen sobre el resto, vamos a agrupar los algoritmos por pares siendo 1:Regresión Lineal, 2:KNN y 3:M5. El objetivo es aplicar **múltiples tests de Wilcoxon aplicando la penalización por pasos de Holm** con la que controlar el error acumulado por realizar varios tests sobre la misma población. Como podemos observar en la tabla comparativa, ninguno de los tests ha rechazado la hipótesis nula de que los pares de algoritmos comparados son similares. Por lo tanto, **no existe evidencia estadística que confirme que existen diferencias entre la Regresión Lineal Múltiple, KNN y M5**.
 
+```{r}
+# Aplicamos el test de Friedman para comparar los tres algoritmos simultáneamente
+test_friedman <- friedman.test(as.matrix(tablatst))
+test_friedman
+# Aplicamos un Post Hoc con el test de Wilcoxon y una penalización por pasos de Holm
+tam <- dim(tablatst)
+groups <- rep(1:tam[2], each=tam[1])
+pairwise.wilcox.test(as.matrix(tablatst), groups, p.adjust = "holm", paired = TRUE)
+```
