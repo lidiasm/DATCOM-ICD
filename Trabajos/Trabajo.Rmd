@@ -27,7 +27,7 @@ set.seed(0)
 
 # 1. Apartado de Regresión
 
-El dataset con el que se procede a trabajar para este primer apartado relativo a la aplicación de técnicas de Regresión se denomina **`abalone`**. En primer lugar, buscamos información sobre sus datos para descubrir sus características principales y composición. Según la descripción que proporciona [Kaggle](https://www.kaggle.com/rodolfomendes/abalone-dataset), se trata de un conjunto de **medidas físicas realizadas sobre un tipo de molusco para determinar su edad**. Por otro lado, en la página de [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/abalone) se detallan los siguientes aspectos:
+El dataset con el que se procede a trabajar para este primer apartado de aplicación de técnicas de Regresión se denomina **`abalone`**. En primer lugar, buscamos información sobre sus datos para descubrir sus características principales y composición. Según la descripción que proporciona [Kaggle](https://www.kaggle.com/rodolfomendes/abalone-dataset), se trata de un conjunto de **medidas físicas realizadas sobre un tipo de molusco para determinar su edad**. Por otro lado, en la página de [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/abalone) se detallan los siguientes aspectos:
 
 * Dispone de un total de **9 variables** de diferente naturaleza:
 
@@ -44,11 +44,11 @@ El dataset con el que se procede a trabajar para este primer apartado relativo a
 | Rings | Entero  | Edad del animal (+1.5)  |   |
   
 * Se trata de un conjunto de datos asociado a un problema de clasificación.
-* **No contiene valores perdidos o nulos**.
+* **No contiene valores perdidos**.
 
 ## 1.1. Análisis Exploratorio de Datos General
 
-A continuación, en este subapartado procedemos a analizar las principales propiedades de este conjunto de datos. En primer lugar cargamos el dataset desde el fichero `abalone.dat`, especificamos el separador para distinguir los valores de cada columna y asignamos manualmente el nombre de las variables a partir de la líneas `@inputs` y `@outputs` del fichero. Como podemos apreciar en el siguiente *chunk* este dataset cuenta con **4.177 registros y 9 variables**. En el caso de la columna que indica el **género podemos apreciar que ya está codificada en este fichero**, por lo que asumiremos que las etiquetas numéricas corresponden a los siguientes valores nominales: 1-masculino, 2-femenino y 3-infante.
+A continuación, procedemos a analizar las principales propiedades de este conjunto de datos. En primer lugar cargamos el dataset desde el fichero `abalone.dat`, especificamos el separador para distinguir los valores de cada columna y asignamos manualmente el nombre de las variables a partir de la líneas `@inputs` y `@outputs` del fichero. Como podemos apreciar en el siguiente *chunk*, este dataset cuenta con **4.177 registros y 9 variables**. En el caso de la columna que indica el **género podemos apreciar que ya está codificada en este fichero**, por lo que asumiremos que las etiquetas numéricas corresponden a los siguientes valores nominales: 1-masculino, 2-femenino y 3-infante.
 
 ```{r}
 # Nombres de las variables según el fichero `abalone.data`
@@ -62,13 +62,13 @@ dim(abalone.df)
 # Tipos de las variables
 str(abalone.df)
 ```
-A continuación aplicamos la función `summary` para obtener un resumen con las principales medidas estadísticas para cada variable. Tal y como se puede observar, el primer aspecto interesante ocurre en la variable `Sex` puesto que según sus cuartiles, en el primer intervalo se encuentran mayoritariamente ejemplares masculinos (etiqueta 1), mientras que en el último intervalo destacan más aquellos clasificados como infantes (etiqueta 3). Por otro lado, podemos apreciar que el ejemplar intermedio es femenino puesto que la mediana es 2. Esta distribución puede indicarnos que **esta variable de clase está balanceada** y existe aproximadamente el mismo número de ejemplares para cada categoría.
+A continuación aplicamos la función `summary` para obtener un resumen con las principales medidas estadísticas de cada variable. Tal y como se puede observar, el primer aspecto interesante ocurre en la variable `Sex` puesto que según sus cuartiles, en el primer intervalo se encuentran mayoritariamente ejemplares masculinos (etiqueta 1), mientras que en el último intervalo destacan los denominados infantes (etiqueta 3). Por otro lado, podemos apreciar que el ejemplar intermedio es femenino puesto que la mediana es 2. Esta distribución puede indicarnos que **esta variable de clase está balanceada** y existe aproximadamente el mismo número de ejemplares para cada categoría.
 
-En relación con las dimensiones de la concha, podemos observar que no existe demasiada diferencia entre los respectivos cuartiles de las variables `Length` y `Diameter`. Además, sus medias y medianas son valores más cercanos al dato máximo, por lo que podemos intuir que existe una **concentración de ejemplares con una concha de mayor envergadura**. Sin embargo, este hecho contrasta con los valores de la variable `Height`, en los cuales destacan los siguientes aspectos:
+En relación a las dimensiones de la concha, podemos observar que no existe demasiada diferencia entre los respectivos cuartiles de las variables `Length` y `Diameter`. Además, sus medias y medianas son valores más cercanos al dato máximo, por lo que podemos intuir que existe una **concentración de ejemplares con una concha de mayor envergadura**. Sin embargo, este hecho contrasta con los valores de la variable `Height`, en los cuales destacan los siguientes aspectos:
 
-1. En primer lugar me resulta extraño que existan **ejemplares con una altura de 0 milímetros**, incluyendo tanto la concha como el animal en el interior. No se conoce cómo se han realizado las mediciones y por lo tanto si podrían ser datos erróneos, pero este tipo de valores parecen ser interesantes para un estudio individualizado.
+1. En primer lugar me resulta extraño que existan **ejemplares con una altura de 0 milímetros**, incluyendo tanto la concha como el animal en el interior. No se conoce cómo se han realizado las mediciones y por lo tanto si podrían ser datos erróneos, pero este tipo de valores parecen ser interesantes para futuros estudios de valores anómalos.
 
-2. Por otro lado, la diferencia entre los cuartiles Q1 y Q3 es aún más reducida que en los casos anteriores, lo que simboliza una **concentración de ejemplares de baja altura**. Si además observamos la media y la mediana, también son valores más cercanos al mínimo.
+2. Por otro lado, la diferencia entre los cuartiles Q1 y Q3 es aún más reducida que en los casos anteriores, lo que significa que existe una **concentración de ejemplares de baja altura**. Si además observamos la media y la mediana, también son valores muy cercanos al mínimo.
 
 ```{r}
 # Resumen del dataset
@@ -80,29 +80,29 @@ Finalmente, cabe destacar que en la variable independiente `Ring` tampoco existe
 
 ### 1.1.1. Hipótesis Iniciales
 
-En función de los resultados obtenidos anteriormente con el resumen estadístico del dataset, procedemos a plantear un conjunto de hipótesis iniciales acerca de las muestras, los predictores y la variable independiente.
+En función del resumen estadístico anterior, procedemos a plantear un conjunto de hipótesis iniciales acerca de las muestras, los predictores y la variable independiente.
 
-1. En primer lugar, parece que existen un **número similar de ejemplares para cada género**, por lo que las clases de la variable `Sex` estarían balanceadas. Creo que esta variable puede ayudar a determinar los ejemplares más jóvenes gracias a la categoría infante. Sin embargo, no tengo claro qué papel podría jugar para el resto de clases.
+1. En primer lugar, parece que existe un **número similar de ejemplares para cada género**, por lo que las clases de la variable `Sex` estarían balanceadas. Creo que esta variable puede ayudar a determinar los ejemplares más jóvenes gracias a la categoría infante, puesto que es lógico pensar que los **ejemplares más jóvenes tendrán características físicas diferentes** a los adultos. Sin embargo, no tengo claro qué papel podría jugar para el resto de clases.
 
-2. Existen una **concentración de ejemplares con conchas de gran tamaño** según los valores estadísticos de las variables `Length` y `Diameter`. Estos predictores pueden influir en la variable independiente puesto que es lógico que un **ejemplar aumente su envergadura conforme aumente su edad**. Asimismo, también pienso que ambas variables van a estar relacionadas ya que también es lógico pensar que **a mayor longitud de la concha, mayor diámetro**, por lo que deberemos analizar sus coeficientes de correlación y seleccionar aquella que maximice la variabilidad de información para la construcción de los modelos. 
+2. Existe una **concentración de ejemplares con conchas de gran tamaño** según los valores estadísticos de las variables `Length` y `Diameter`. Estos predictores pueden influir en la variable independiente puesto que es lógico que un **ejemplar aumente su envergadura conforme aumente su edad**. Asimismo, también pienso que ambas variables van a estar relacionadas ya que también es lógico pensar que **a mayor longitud de la concha, mayor diámetro**, por lo que deberemos analizar sus coeficientes de correlación y seleccionar aquella que maximice la variabilidad de información para construir los modelos. 
 
-3. En la variable `Height` se observa una concentración de **ejemplares con alturas extremadamente bajas, incluso de 0 milímetros**. Por un lado, me parece extraño este último dato puesto que, independientemente de la edad, no me parece que tenga sentido un valor de 0 en una medida física. Por otro lado, también me extraña la cantidad de **ejemplares de poca altura, en comparación con los considerables tamaños de sus conchas**. A mi parecer, en el primer caso podemos encontrarnos con medidas erróneas, mientras que con respecto a la segunda observación, pienso que este tipo de especie puede estar caracterizada por tener un grosor muy fino. Sin embargo, no consigo visualizar la importancia que puede jugar esta variable en la predicción de la edad de los ejemplares de esta especie.
+3. En la variable `Height` se observa una concentración de **ejemplares con alturas extremadamente bajas, incluso de 0 milímetros**. Por un lado, me parece extraño este último dato puesto que, independientemente de la edad, no me parece que tenga sentido un valor de 0 en una medida física. Por otro lado, también me extraña la cantidad de **ejemplares de poca altura, en comparación con los considerables tamaños de sus conchas**. A mi parecer, en el primer caso podemos encontrarnos con medidas erróneas, mientras que con respecto a la segunda observación, pienso que este tipo de especie puede estar caracterizada por tener un grosor muy fino. Sin embargo, no consigo visualizar la importancia que puede jugar esta variable en la predicción de la edad de esta especie.
 
-4. Las variables relativas a las diferentes medidas de peso disponen de un rango más amplio de valores, con una **concentración de ejemplares de poco peso**. Este hecho me resulta extraño puesto que, como se ha comentado anteriormente, el tamaño de sus conchas es considerablemente grande, por lo que **cabría esperar que sus pesos también fueran mayores**. Por otro lado, creo que pueden existir las siguientes relaciones entre este tipo de predictores.
+4. Las diferentes medidas de peso disponen de un rango más amplio de valores, con una **concentración de ejemplares de poco peso**. Este hecho me resulta extraño puesto que, como se ha comentado anteriormente, el tamaño de sus conchas es considerablemente grande, por lo que **cabría esperar que sus pesos también fueran mayores**. Por otro lado, creo que pueden existir las siguientes relaciones entre este tipo de predictores.
 
-    * Todos los pesos particulares a una zona del ejemplar pueden estar relacionados linealmente con la variable que representa el peso total `Whole_weight`, por lo que puede ser lógico pensar que conforme **aumenten los pesos específicos, también aumente el peso general**. Esta teoría se podrá confirmar visualizando sus coeficientes de correlación.
+    * Todos los pesos particulares pueden estar relacionados linealmente con la variable que representa el peso total `Whole_weight`, por lo que puede ser lógico pensar que conforme **aumenten los pesos específicos, también aumente el peso general**. Esta teoría se podrá confirmar visualizando sus coeficientes de correlación.
   
-    * Las variables `Shucked_weight` y `Viscera_weight` pueden estar relacionadas linealmente puesto que me parece lógico pensar que si **aumenta el peso de los órganos de un ejemplar, también aumente de peso el propio animal**. De igual modo, esta hipótesis podrá comprobarse mediante un gráfico de correlaciones.
+    * Las variables `Shucked_weight` y `Viscera_weight` pueden estar relacionadas linealmente, puesto que me parece lógico pensar que si **aumenta el peso de los órganos de un ejemplar, también aumenta su peso corporal**. De igual modo, esta hipótesis podrá comprobarse mediante un gráfico de correlaciones.
   
-5. Finalmente, cabe destacar que parece haber una **mayor representación de ejemplares jóvenes que de otras edades**. Este hecho puede suponer un problema en caso de que las características físicas varíen en función de la edad, puesto que si existen pocos ejemplares de mayor edad, los modelos pueden no aprender suficientemente bien los rasgos característicos de cada generación como para identificar a las futuras muestras más mayores.
+5. Finalmente, cabe destacar que parece haber una **mayor representación de ejemplares jóvenes**. Este hecho puede suponer un problema en caso de que las características físicas varíen en función de la edad, puesto que si existen pocos ejemplares de mayor edad, los modelos pueden no aprender suficientemente bien los rasgos característicos de cada generación como para identificar las futuras muestras.
 
 ## 1.2. Análisis Exploratorios Univariantes
 
-El objetivo de esta sección es realizar un estudio en detalle de cada una de las variables que componen este dataset para comprobar sus características principales, dependiendo de la naturaleza de sus valores. En el caso de las **variables nominales se pretende analizar el balanceamiento de sus clases** a través de gráficos de barras que representen la frecuencia de cada categoría. Mientras que para **variables escalares se realizarán análisis estadísticos sobre la varianza, desviación típica, grado de asimetría, tipo de curtosis y distribución**.
+El objetivo de esta sección consiste en realizar un estudio detallado de cada variable dependiendo de la naturaleza de sus valores. En el caso de las **variables nominales, se pretende analizar el balanceamiento de sus clases** a través de gráficos de barras que representen la frecuencia de cada categoría. Mientras que para **variables escalares se realizarán análisis estadísticos** sobre la varianza, desviación típica, grado de asimetría, tipo de curtosis y distribución.
 
 ### 1.2.1. Variables nominales
 
-En el caso de este dataset, la **única variable nominal es `Sex`**. Por ello, en este primer gráfico de barras se pretende mostrar el número de ejemplares de cada uno de los géneros disponibles en este dataset: masculino (1), femenino (2) e infante (3). Nuestra **hipótesis inicial afirma que las clases están balanceadas**, por lo que el número de muestras de cada clase no debería de variar demasiado. Y tal y como podemos observar, podemos **aceptar dicha hipótesis** puesto que existen 1528 muestras masculinas, 1307 femeninas y 1342 ejemplares infantes, es decir, las diferentes categorías disponen de una representación razonablemente equivalente.
+En el caso de este dataset, la **única variable nominal es `Sex`**. Por ello, en este primer gráfico de barras se pretende mostrar el número de ejemplares de cada uno de los géneros disponibles: masculino (1), femenino (2) e infante (3). Nuestra **hipótesis inicial afirma que las clases están balanceadas**, por lo que el número de muestras de cada clase no debería de variar demasiado. Y tal y como podemos observar, podemos **aceptar dicha hipótesis** puesto que existen 1528 muestras masculinas, 1307 femeninas y 1342 ejemplares infantes, es decir, las diferentes categorías disponen de una representación razonablemente equivalente.
 
 ```{r}
 # Definimos los géneros disponibles
@@ -122,7 +122,7 @@ ggplot(abalone.df, aes(x=factor(Sex), fill=factor(Sex))) +
 
 ### 1.2.2. Variables numéricas
 
-A continuación se calculan las medidas estadísticas mencionadas anteriormente para las restantes variables numéricas de este dataset. Para calcular la varianza se utiliza la función `var` aplicada a cada uno de los predictores, mientras que para la **desviación típica, grado de asimetría y curtosis se hace uso de la función `describe` del paquete `psych`**. Finalmente, con el objetivo de mostrar los resultados organizadamente, se define un `dataframe` cuyas columnas representan los cálculos realizados y cuyas filas indican los predictores asociados.
+A continuación se calculan las medidas estadísticas mencionadas anteriormente para las variables numéricas de este dataset. Para la varianza se utiliza la función `var` aplicada a cada uno de los predictores, mientras que para la desviación típica, grado de asimetría y curtosis se hace uso de la **función `describe` del paquete `psych`**. Finalmente, con el objetivo de mostrar los resultados organizadamente, se define un `dataframe` cuyas columnas representan los cálculos realizados y cuyas filas indican los predictores asociados.
 
 ```{r}
 # Cálculo de la varianza para cada variable numérica
@@ -134,13 +134,13 @@ abalone.statistics <- abalone.statistics %>% select(c('sd', 'skew', 'kurtosis'))
 cbind(var=abalone.vars, abalone.statistics)
 ```
 
-Como podemos observar en los resultados, **los predictores disponen de una varianza mínima** puesto que sus valores se encuentran muy cercanos a 0. Este hecho nos indica que existe **muy poca variabilidad en sus valores**. En combinación con esta medida estadística, podemos observar que la desviación estándar también es bastante baja, lo cual indica que los valores de los **predictores se encuentran muy cercanos a la media**. La única excepción es la variable independiente `Ring` cuya varianza y desviación típica son más elevadas ya que existe una variedad de ejemplares de diferentes edades.
+Como podemos observar en los resultados, los predictores disponen de una **varianza mínima** puesto que sus valores se encuentran muy cercanos a 0. Este hecho nos indica que existe **muy poca variabilidad** en sus datos. En combinación con esta medida estadística, podemos observar que la **desviación estándar también es bastante baja**, lo cual indica que los valores de los predictores se encuentran **muy cercanos a la media**. La única excepción es la variable independiente `Ring`, cuya varianza y desviación típica son más elevadas ya que existen ejemplares de diferentes edades.
 
-En relación con la forma de la distribución, podemos apreciar que la **mayoría de variables disponen de un grado de asimetría superior a 0.5**. Este hecho nos indica que tanto los predictores como la variable independiente tienen desiguales concentraciones de valores en zonas específicas de sus intervalos. En particular, todas las **medidas relativas al peso se encuentran encoladas a la derecha** puesto que su grado de asimetría es positivo. Mientras que las **medidas relativas al tamaño de la concha, como `Length` y `Diameter`, están encoladas a la izquierda** por sus coeficientes negativos. Los casos de la **variable independiente y del predictor `Height`** destacan sobre los restantes puesto que sus coeficiente son mayores que 1, lo cual indica que están caracterizadas por una **fuerte asimetría, especialmente en la variable dependiente**. 
+En relación con la forma de la distribución, podemos apreciar que la mayoría de variables disponen de un **grado de asimetría superior a 0.5**. Este hecho nos indica que tanto los predictores como la variable independiente tienen desiguales concentraciones de valores en zonas específicas de sus intervalos. En particular, todas las **medidas relativas al peso se encuentran encoladas a la derecha** puesto que su grado de asimetría es positivo. Mientras que las **medidas relativas al tamaño de la concha, como `Length` y `Diameter`, están encoladas a la izquierda** por sus coeficientes negativos. Los casos de la **variable independiente y del predictor `Height`** destacan sobre los restantes puesto que sus coeficiente son mayores que 1, lo cual indica que están caracterizadas por una **fuerte asimetría**, especialmente la variable dependiente. 
 
-Situaciones similares ocurren con los **coeficientes de curtosis**, que indican la forma de las colas asociadas a las distribuciones de cada variable. La mayoría de estos valores son se encuentran en el intervalo [-0.05, 0.6], lo cual afirma que muchos predictores disponen de concentraciones menores de datos en los extremos, pero al tratarse de **valores cercanos a 0 podemos intuir que siguen una distribución similar a la Gaussiana**. Sin embargo, esto no es aplicable ni a la variable **`Height`, cuyo coeficiente es muy elevado, ni al término independiente `Ring` cuyo valor también se aleja bastante de 0**. En el primer caso, la distribución del predictor estará caracterizada por una considerable concentración de valores en un intervalo muy reducido, mostrando un gran pico, mientras que para la variable `Ring` dicha acumulación de datos no será tan masiva pero también seguirá una forma similar.
+Situaciones similares ocurren con los **coeficientes de curtosis**, que indican la forma de las colas asociadas a las distribuciones. La mayoría de estos valores se encuentran en el intervalo [-0.05, 0.6], lo cual afirma que muchos predictores disponen de concentraciones menores en algunos extremos, pero al tratarse de **valores cercanos a 0 podemos intuir que siguen una distribución similar a la Gaussiana**. Sin embargo, esto no es aplicable ni a la variable **`Height`, cuyo coeficiente es muy elevado, ni al término independiente `Ring` cuyo valor también se aleja bastante de 0**. En el primer caso, la distribución del predictor estará caracterizada por una considerable concentración de valores en un intervalo muy reducido, mostrando un gran pico, mientras que para la variable `Ring` dicha acumulación de datos no será tan masiva pero también seguirá una forma similar.
 
-Para finalizar el estudio de las variables numéricas, a continuación procedemos a **comprobar si siguen una distribución normal**. Para ello vamos a experimentar con dos metodologías diferentes, una gráfica y otra estadística. En el primer caso vamos a hacer uso de los **gráficos QQ únicamente sobre las variables `Height` y `Ring`**, puesto que son las más peculiares según los resultados proporcionados en este estudio. Sin embargo, para confirmar la normalidad de cada variable se aplicará un test estadístico específico para esta cualidad: el **test de Shapiro-Wilk’s**. La hipótesis nula que se establece es que la variable sigue una distribución normal, frente a la alternativa en la que se afirma que no sigue una distribución normal. Por lo tanto, si el test rechaza, es decir, obtiene un p-valor menor que el umbral=0.05, podemos determinar estadísticamente que la variable analizada no sigue una distribución normal.
+Finalizando este estudio, a continuación procedemos a comprobar si siguen una **distribución normal**. Para ello vamos a experimentar con dos metodologías diferentes, una gráfica y otra estadística. En el primer caso vamos a hacer uso de los **gráficos QQ únicamente sobre las variables `Height` y `Ring`**, puesto que son las más peculiares según los resultados anteriores. Sin embargo, para confirmar la normalidad de cada variable se aplicará un test estadístico específico para esta demostrar esta propiedad: el **test de Shapiro-Wilk’s**. La hipótesis nula que se establece es que la variable sigue una distribución normal, frente a la alternativa contraria. Por lo tanto, si el test rechaza, es decir, obtiene un p-valor menor que el umbral=0.05, podemos determinar estadísticamente que la variable no sigue una distribución normal.
 
 ```{r}
 # Gráfico QQ para la variable dependiente `Height`
@@ -151,9 +151,9 @@ qqnorm(abalone.df$Ring, main="Gráfico QQ de Ring")
 qqline(abalone.df$Ring)
 ```
 
-Tal y como podemos apreciar en el primer gráfico QQ asociado a `Height`, los cuantiles teóricos y empíricos coinciden prácticamente al 100%, a excepción de dos casos. Como consecuencia, este predictor tiene altas probabilidades de **seguir una distribución normal**. No obstante, el caso de la variable independiente es diferente, puesto que parece haber una menor coincidencia entre ambas medidas, lo cual puede significar que la variable **`Ring` parece no seguir una distribución normal**. 
+Tal y como podemos apreciar en el primer gráfico QQ asociado a `Height`, los cuantiles teóricos y empíricos coinciden prácticamente al 100%, a excepción de dos casos. Como consecuencia, este predictor parece que **gráficament puede seguir una distribución normal**. No obstante, el caso de la variable independiente es diferente, puesto que parece haber una menor coincidencia entre ambas medidas, lo cual puede significar que la variable **`Ring` no sigue una distribución normal**. 
 
-Antes de aplicar el test de Shapiro-Wilk’s sobre cada variable, mi hipótesis es que todas las variables parecen seguir una distribución normal, a excepción del término independiente `Ring`. Como se realizó anteriormente, a continuación se presentan los resultados de los tests en un `dataframe` para vincular cada variable con el p-valor resultante al aplicar este test de normalidad. Como podemos apreciar en los siguientes resultados, **todos los tests han rechazado la hipótesis nula** puesto que en todos se obtienen p-valores menores que el umbral establecido en 0.05. Esto significa que **ninguna de las variables sigue una distribución normal**, lo cual aumenta la importancia de utilizar tests estadísticos en lugar de métodos gráficos que pueden inducirnos a errores.
+Antes de aplicar el test de Shapiro-Wilk’s sobre cada variable, mi hipótesis es que todas las variables parecen seguir una distribución normal, a excepción del término independiente `Ring`. Como se realizó anteriormente, se presentan los resultados de los tests en un `dataframe` para vincular cada variable con su p-valor asociado. Tal y como podemos apreciar, **todos los tests han rechazado la hipótesis nula** puesto que en todos se obtienen p-valores menores que el umbral establecido en 0.05. Esto significa que **ninguna de las variables sigue una distribución normal**, lo cual aumenta la importancia de utilizar tests estadísticos en lugar de métodos gráficos que pueden inducirnos a errores.
 
 ```{r}
 # Aplicamos el test de Shapiro-Wilk’s para cada variable extrayendo el p-valor
@@ -166,13 +166,15 @@ abalone.shapiros.df
 ```
 ## 1.3. Análisis Exploratorio Multivariante
 
+En esta sección se pretende realizar diversos análisis considerando la gran mayoría de variables con el objetivo de obtener una idea general de este conjunto de datos.
+
 ### 1.3.1. Matriz de Puntos
 
-En esta sección se pretenden realizar diversos análisis considerando la gran mayoría de variables con el objetivo de formar una idea generalizada de este conjunto de datos. Así, en primer lugar vamos a representar una matriz de puntos con todas las variables disponibles. En la diagonal se ha elegido representar las **curvas de densidad para visualizar sus respectivas distribuciones** analizadas anteriormente. Aunque la aplicación de este tipo de gráfico no tenga sentido sobre una variable de clase, como es `Sex`, la incluimos para observar las características de cada categoría y aplicar un **filtro por género** con el que representar cada clase de un color y formas diferentes. De este modo, enriquecemos el gráfico con más información y nos permite comenzar a constrastar las conclusiones obtenidas anteriormente.
+En primer lugar vamos a representar una matriz de puntos con todas las variables disponibles. En la diagonal se ha elegido representar las **curvas de densidad** para graficar sus distribuciones. Aunque su aplicación sobre variables nominales puede no tener sentido, incluimos el predictor `Sex` para distinguir las cualidades físicas de cada categoría. Para ello, aplicamos un **filtro por género** con el que representar cada clase con un color y forma diferente. Así, enriquecemos el gráfico con más información y podremos comenzar a contrastar las hipótesis iniciales.
 
-Comenzamos analizando las curvas de densidad. Si observamos las distribuciones de todas las variables, excepto `Sex`, podemos apreciar que la de los ejemplares masculinos y femeninos son prácticamente idénticas, puesto que se superponen en muchas de las gráficas. Este hecho puede indicarnos que **no existen diferencias físicas entre los principales géneros** de esta especie. No ocurre lo mismo con el caso de los infantes, ya que sus valores son inferiores en cada una de las medidas con respecto a los otros dos géneros, lo cual me parece bastante lógico.
+Si observamos las distribuciones de todas las variables, excepto `Sex`, podemos apreciar que las relativas a los ejemplares masculinos y femeninos son prácticamente idénticas, puesto que se superponen en muchas de las gráficas. Este hecho puede indicarnos que **no existen diferencias físicas entre el género masculino y femenino**. No ocurre lo mismo con el caso de los infantes, ya que sus valores son inferiores en cada una de las medidas con respecto a los otros dos géneros, lo cual ya se había planteado inicialmente.
 
-Por otro lado, si observamos las curvas de densidad de las variables `Length` y `Diameter` podemos afirmar la teoría anterior de que la mayoría de los ejemplares disponen de unas **conchas muy voluminosas en contraposición con la altura**, puesto que los valores de `Height` están mayormente concentrados al comienzo del intervalo. Esto nos puede indicar que este tipo de molusco dispone de una gran amplitud aunque de un grosor fino. Como se ha comentado anteriormente, en el caso de las medidas relativas a los diferentes pesos podemos observar que existe una mayor variabilidad puesto que su rango de valores es más amplio. De igual modo, si observamos las curvas de densidad de la variable independiente `Ring` podemos apreciar que la **mayoría de los ejemplares son bastante jóvenes** ya que el intervalo donde se concentran más es [5, 15]. 
+Por otro lado, si observamos las curvas de densidad de las variables `Length` y `Diameter`, podemos confirmar la teoría de que la mayoría de los ejemplares disponen de unas **conchas muy voluminosas en contraposición con la altura**, puesto que los valores de `Height` están mayormente concentrados al comienzo del intervalo. Esto nos puede indicar que este tipo de molusco dispone de una gran amplitud aunque tiene un grosor fino. Como se ha comentado anteriormente, en el caso de las medidas relativas a los diferentes pesos podemos observar que existe una mayor variabilidad puesto que su rango de valores es más amplio. De igual modo, si observamos las curvas de densidad de la variable independiente `Ring` podemos apreciar que la **mayoría de los ejemplares son bastante jóvenes** ya que el intervalo donde se concentran más es [5, 15]. 
 
 ```{r}
 # Parámetros
@@ -187,19 +189,19 @@ scatterplotMatrix(abalone.df, diagonal=list(method="density"),
                   group=as.factor(abalone.df$Sex))
 ```
 
-La segunda parte de este estudio consiste en analizar las posibles asociaciones entre diversos pares de variables. Tal y como podemos observar, parece ser que **la longitud está relacionada linealmente con el diámetro** de la concha, puesto que su gráfica asociada prácticamente representa una recta estrictamente creciente. Por lo que a mayor longitud de la concha, mayor diámetro, algo que puede parecer bastante lógico. Una situación similar ocurre con el resto de variables, ya que en todas las gráficas relacionadas con la variable `Length` se puede visualizar una función creciente, siendo de menor intensidad en el caso de la variable `Height`, cuya representación se parece más a una raíz cuadrada. Todas estas conclusiones parecen ser aplicables también a la variable `Diameter` puesto que las gráficas con el resto de variables son muy similares. Continuando con los diferentes pesos también podemos observar que sus vínculos son montónicos, es decir, aumentan simultáneamente, por lo que podemos intuir que durante el desarrollo de los ejemplares sus diferentes **medidas de peso siguen una misma tendencia a la alza**. 
+La segunda parte de este estudio consiste en analizar las posibles asociaciones entre pares de variables. Tal y como podemos observar, parece ser que **la longitud está relacionada linealmente con el diámetro** de la concha, puesto que su gráfica asociada prácticamente representa una recta estrictamente creciente. Por lo que nuestra teoría se confirma de que a mayor longitud de la concha, mayor diámetro. Una situación similar ocurre con el resto de variables, ya que en todas las gráficas relacionadas con la variable `Length` se puede visualizar una función creciente, siendo de menor intensidad en el caso de la variable `Height`, cuya representación se parece más a una raíz cuadrada. Todas estas conclusiones parecen ser aplicables también a la variable `Diameter` puesto que las gráficas con el resto de variables son muy similares. Continuando con los diferentes pesos también podemos observar que sus vínculos son montónicos, es decir, aumentan simultáneamente, por lo que podemos intuir que durante el desarrollo de los ejemplares sus diferentes **medidas de peso siguen una misma tendencia a la alza**. 
 
-Un caso peculiar lo encontramos entre la variable `Height` y las variables asociadas a los diferentes pesos. Si observamos sus gráficas, podemos apreciar un crecimiento muy considerable y abrupto al comienzo del intervalo, es decir, existe una concentración de **ejemplares con una elevada altura y bajos pesos**. Sin embargo, a diferencia del resto de gráficas, en estos casos podemos observar que existen varias muestras que no siguen esta tendencia, ya que sus alturas disminuyen conforme aumentan sus pesos. 
+Un caso peculiar lo encontramos entre la variable `Height` y las variables con los diferentes pesos. Si observamos sus gráficas, podemos apreciar un crecimiento muy considerable y abrupto al comienzo del intervalo, es decir, existe una concentración de **ejemplares con una elevada altura y bajos pesos**. Sin embargo, a diferencia del resto de gráficas, en estos casos podemos observar que existen varias muestras que no siguen esta tendencia, ya que sus alturas disminuyen conforme aumentan sus pesos. Esto puede indicar que los ejemplares de mayor edad pierden cualidades físicas, como ocurre en la mayoría de las otras especies animales.
 
 Finalmente, si observamos la variable independiente `Ring` podemos apreciar que es creciente con respecto a la longitud y diámetro, por lo que parece que los ejemplares de **mayor edad, tienen una concha de mayor longitud y diámetro**. Con respecto a los pesos hay una mayor variabilidad, aunque en el caso del peso asociado a la concha sí se aprecia un aumento de sus valores conforme mayor es la edad. Sin embargo, en las restantes variables podemos observar que existen diferencias entre los distintos géneros. Mientras que la tendencia de los infantes en todas las variables de pesos se mantiene creciente, existen ejemplares masculinos y femeninos cuyos tamaños se estabilizan e incluso se reducen conforme aumenta la edad.
 
 ### 1.3.2. Correlaciones
 
-El siguiente paso consiste en estudiar los coeficientes de correlación entre todas las variables para conocer aquellas que proporcionan la misma información, además de cuáles podrían ser los mejores predictores para entrenar los futuros de modelos de regresión. Tal y como se aprecia en el siguiente gráfico, existen una gran cantidad de variables correladas.
+En esta sección se pretende estudiar los coeficientes de correlación de todas las combinaciones de variables. El objetivo es identificar aquellos vínculos relevantes que puedan permitirnos seleccionar los predictores más prometedores para los futuros modelos. Tal y como se aprecia en el siguiente gráfico, existen una gran cantidad de variables correladas.
 
-* Como había comentado anteriormente, se confirma la teoría de que la **variable `Length` y `Diamenter` están fuertemente correladas** puesto que ambas medidas son relativas al tamaño de la concha. Esta asociación nos permite seleccionar solo una de las dos variables para construir los modelos. Del mismo, sendas variables se encuentran también **fuertemente correladas con las diferentes medidas de peso**. Por lo tanto, parece ser que la información que proporcionan este tipo de variables es la misma que la que proporcionan los predictores de pesos.
+* Como había comentado anteriormente, se confirma la teoría de que la **variable `Length` y `Diamenter` están fuertemente correladas** puesto que ambas medidas son relativas al tamaño de la concha. Esta asociación nos permite seleccionar a una de las dos variables para construir los modelos. Del mismo, sendos predictores se encuentran también **fuertemente correladas con las diferentes medidas de peso**. Por lo tanto, parece que al ser medidas relativas al físico de los ejemplares, comparten cierto grado de información.
 
-* Una segunda teoría que se confirma es que la **variable `Sex` no aporta información relevante** puesto que los coeficientes de correlación con las restantes variables no son considerables. Como consecuencia, esta variable no formará parte del conjunto de predictores con los que entrenar los modelos de regresión.
+* Por otro lado, parece que la **contribución de la variable `Sex` al resto de variables no es demasiado relevante**, ya que sus coeficientes de correlación están por debajo de 0.5. Una razón explicativa podría ser que este predictor solo ayuda a identificar a ejemplares muy jóvenes, por lo que no cubre a la mayoría de muestras.
 
 ```{r}
 # Representa los coeficientes de correlación para todas las variables
@@ -212,13 +214,13 @@ El siguiente paso consiste en estudiar los coeficientes de correlación entre to
 corrplot(cor(abalone.df), method='number', order='alphabet',
          type='lower', tl.cex=0.7, number.cex=0.7)
 ```
-En función de las correlaciones que muestra el gráfico entre los posibles predictores y la variable independiente `Ring`, podemos observar que la mayoría de sus coeficientes demuestran una relación moderada, a excepción de `Shell_weight`. Esta variable es la que presenta un valor más alto de 0.63 por lo que parece que es el **predictor que más relación tiene con la variable independiente**, y por lo tanto, una alta probabilidad de formar parte de un buen modelo de regresión.
+En función de las correlaciones resultantes entre los predictores y la variable independiente, podemos observar que la mayoría de sus coeficientes demuestran una relación moderada, a excepción de `Shell_weight`. Esta variable es la que presenta un valor más alto de 0.63 por lo que parece que es el predictor **más relacionado con el término independiente**. Como consecuencia, se postula como uno de los predictores que más probabilidad tiene de ayudar en la construcción de los modelos.
 
 ### 1.3.3. Diagramas de cajas
 
-Para finalizar este estudio multivariante, procedemos a representar un diagrama de cajas con todas las variables numéricas para visualizar, de manera gráfica, la dispersión de los datos y comprobar si concuerda con las conclusiones extraídas anteriormente. Tal y como podemos apreciar, la mayoría de predictores tienen una longitud mínima, lo que supone que se encuentran caracterizados por una **ínfima variabilidad de sus valores**. Asimismo, también podemos observar que la mayoría dispone de un **intervalo de valores muy similar**, por lo que no existen variables con escalas predominantes que puedan afectar a los modelos. Otra conclusión que puede extraerse de este gráfico es que todos los predictores representados contiene **outliers moderados**, puesto que se encuentran muy cercanos al conjunto de valores de cada uno, por lo tanto no se trata de valores extremos. 
+Finalizando estudio multivariante, vamos a representar un diagrama de cajas con todas las variables numéricas para graficar sus dispersiones de datos y comprobar las hipótesis anteriores. Tal y como podemos apreciar, la mayoría de predictores tienen una longitud mínima, lo que significa que sus datos disponen de una **muy baja variabilidad**. Asimismo, también parece que sus **intervalos de valores son muy similares**, por lo que no existen variables con escalas predominantes que puedan afectar a los modelos. Otra conclusión que se puede extraer es que todos los predictores disponen de **outliers moderados**. Se trata de puntos exteriores muy cercanos a las cajas, por lo que parece que no son valores extremos. 
 
-Sin embargo, en el caso de la variable independiente `Ring` podemos observar como su **dispersión es mayor** puesto que su correspondiente caja dispone de una mayor longitud. Esto nos indica que sus valores son más diversos, conclusión a la que habíamos llegado anteriormente. Del mismo modo, también se confirma la teoría de que existe una **concentración de ejemplares jóvenes** de una edad entre 5 y 15, es por ello por lo que aparece un mayor número de outliers en las restantes franjas de edad. Observándolos, podemos contar que el segundo grupo más representado es el que tiene una edad a partir de 15, y los que menos aparecen son aquellos que se encuentran en el intervalo [0, 5].
+Sin embargo, en el caso de la variable independiente `Ring` podemos observar que su **dispersión es mayor**, puesto que su correspondiente caja tiene una mayor longitud. Este hecho indica que dispone de una mayor variabilidad en sus datos, lo que confirma nuestra teoría inicial. Igualmente, también se confirma la hipótesis de que existe una **concentración de ejemplares jóvenes** de una edad entre 5 y 15, y puede ser la razón por la que aparece un mayor número de outliers en las otras franjas de edad. Observándolos, podemos contar que el segundo grupo más representado es el que tiene una edad a partir de 15, y los que menos aparecen son aquellos que se encuentran en el intervalo [0, 5].
 
 ```{r}
 # Definimos un color por cada variable
@@ -229,18 +231,18 @@ boxplot(abalone.df %>% select(-Sex), notch=TRUE, col=var_colors)
 
 ## 1.4. Modelos de Regresión 
 
-En este segundo apartado se pretende construir diferentes modelos aplicando diversas técnicas de Regresión para intentar maximizar el número de aciertos en la tarea de predecir la variable `Ring` en este dataset.
+En este apartado se pretende construir diferentes modelos aplicando diversas técnicas de regresión para intentar maximizar el número de aciertos en la tarea de predecir la variable `Ring` de este dataset.
 
 ### 1.4.1. Regresión Lineal Simple
 
-Comenzamos utilizando la Regresión Lineal Simple entrenando un modelo distinto para cada una de las cinco mejores variables identificadas. Según los estudios realizados anteriormente, la variable **`Shell_weight` es la que dispone de un coeficiente de correlación mayor con respecto `Ring`**. Por lo tanto, a continuación construimos un primer modelo con esta variable en solitario. 
+Comenzamos utilizando la Regresión Lineal Simple entrenando un modelo distinto para cada uno de los cinco predictores más prometedores. Según los estudios anteriores, la variable **`Shell_weight` es la que dispone de un coeficiente de correlación mayor con respecto `Ring`**. Por lo tanto, el primer modelo estará compuesto por este predictor en solitario. 
 
 ```{r}
 # Primer modelo: Ring~Shell_weight
 abalone.ls1 <- lm(Ring~Shell_weight, data=abalone.df)
 summary(abalone.ls1)
 ```
-Como podemos apreciar en los resultados, el p-valor del predictor es menor que el umbral de 0.05 y además dispone de un alto nivel de significación, por lo que **la variable `Shell_weight` resulta útil para la predicción de `Ring`**. Sin embargo, el valor de R² ajustado indica que este modelo solo es capaz de explicar un 39% aproximadamente de los datos, mientras que el modelo dispone de un RSE de 2.51, por lo tanto parece que será necesario añadir más variables para mejorar su capacidad de generalización.
+Como podemos apreciar en los resultados, el p-valor del predictor es menor que el umbral 0.05 y dispone de un alto nivel de significación, por lo que **la variable `Shell_weight` resulta útil para la predicción de `Ring`**. Sin embargo, el valor de R² ajustado indica que este modelo solo es capaz de explicar un 39% aproximadamente de los datos, mientras que tiene asociado un RSE de 2.51. Como consecuencia, parece que será necesario añadir más variables con el fin de mejorar su capacidad de generalización.
 
 A continuación, procedemos a entrenar un **segundo modelo con la variable `Diameter`**, puesto que ha sido otro de los predictores que están más cláramente asociados con la variable independiente. Para ello, reproducimos el mismo proceso anterior.
 
@@ -249,25 +251,25 @@ A continuación, procedemos a entrenar un **segundo modelo con la variable `Diam
 abalone.ls2 <- lm(Ring~Diameter, data=abalone.df)
 summary(abalone.ls2)
 ```
-Como podemos apreciar en los resultados, son muy similares a los del modelo anterior, puesto que el **nivel de significación estadística del predictor `Diameter` es muy alto. Sin embargo, en este modelo el RSE aumenta ligeramente mientras que el valor de R² ajustado disminuye hasta un 33%**. Este hecho nos puede indicar que la variable `Diameter` también proporciona información útil para predecir la variable independiente `Ring` aunque en menor medida que la variable `Shell_weight`.
+Como podemos observar, los resultados son muy similares a los del modelo anterior, puesto que el nivel de significación estadística del predictor `Diameter` es muy alto. Sin embargo, en este modelo el **RSE aumenta ligeramente** mientras que el valor de **R² ajustado disminuye** hasta un 33%. Este hecho nos puede indicar que la variable `Diameter` también proporciona información útil para predecir la variable independiente `Ring`, aunque en menor medida que el predictor `Shell_weight`.
 
-Para el tercer modelo vamos a utilizar la variable `Length`, que como hemos observado anteriormente, está fuertemente correlada con `Diameter` y con la variable independiente. Una forma de conocer **cuál de los dos predictores proporciona mayor información útil** puede ser entrenar un modelo con cada uno para luego comparar sus resultados.
+Para el tercer modelo vamos a utilizar la variable `Length`, que como hemos observado anteriormente, está fuertemente correlada con `Diameter` y con la variable independiente. El objetivo consiste en entrenar un modelo diferente para cada predictor para comparar su resultados y conocer **cuál es el que proporciona más información** con la que predecir la edad de los ejemplares.
 
 ```{r}
 # Tercer modelo: Ring~Length
 abalone.ls3 <- lm(Ring~Length, data=abalone.df)
 summary(abalone.ls3)
 ```
-En comparación con el modelo anterior, podemos observar que este tercer **modelo entrenado con `Length` dispone de un mayor RSE y un valor de R² ajustado**, lo que nos indica que esta variable aporta menor información para la predicción de la variable independiente. Por lo tanto, en caso de tener qué decidir qué predictor sería el más conveniente, en función de los resultados se escogería la variable `Diameter`.
+En comparación con el modelo anterior, podemos observar que este tercer modelo entrenado con `Length` dispone de un **valor mayor de RSE y de R² ajustado**. Por tanto, este predictor aporta menor cantidad de información para la predicción de la variable independiente. Así, en caso de tener que seleccionar una de las dos, parece ser que la variable `Diameter` es la más prometedora para determinar la edad de las muestras de este dataset.
 
-En se pretende utilizar una de las **variables más diferentes del dataset: el predictor `Height`**. Como se ha observado en los diferentes análisis, esta variable dispone de una distribución más extraña, comparada con el resto de predictores, y aporta información general al tamaño del ejemplar considerando tanto el animal como su concha.
+El cuarto modelo se encuentra compuesto de la variable `Height`, una de las más peculiares de este dataset, según hemos podido comprobar. Como se ha observado en los diferentes análisis, este predictor dispone de una distribución más extraña, al compararla con el resto, y aporta información general al tamaño del ejemplar considerando tanto el animal como su concha.
 
 ```{r}
 # Cuarto modelo: Ring~Height
 abalone.ls4 <- lm(Ring~Height, data=abalone.df)
 summary(abalone.ls4)
 ```
-Tal y como se aprecia en el resumen de este tercer modelo, el predictor `Height` no mejora ni la explicabilidad de la variable independiente ni el RSE, incluso se puede observar un **ligero empeoramiento de las medidas** respectivas. Este hecho nos indica que aporta menos información útil para la predicción de `Ring` que en los otros casos anteriores.
+Tal y como se aprecia en el resumen del modelo, el predictor `Height` no mejora ni la explicabilidad de la variable independiente ni el RSE, incluso se puede observar un **ligero empeoramiento de las medidas** de calidad. Este hecho nos indica que aporta menos información útil para la predicción de la variable `Ring` que en los casos anteriores.
 
 Para el quinto y último modelo el predictor participante es `Whole_weight`, una medida de peso que involucra al cuerpo y a la concha del ejemplar. Es otra de las variables que disponen de una correlación moderada con respecto a la variable independiente, aunque en menor medida que los predictores anteriores, por lo que no esperamos que produzca una considerable mejoría.
 
@@ -276,19 +278,19 @@ Para el quinto y último modelo el predictor participante es `Whole_weight`, una
 abalone.ls5 <- lm(Ring~Whole_weight, data=abalone.df)
 summary(abalone.ls5)
 ```
-Tal y como se comentaba anteriormente, **esta variable no está tan fuertemente asociada** a la variable independiente y por ello su RSE aumenta, mientras que el valor del R² ajustado disminuye hasta situarse por debajo del 30%. Por lo tanto, tampoco es suficiente como para explicar toda la variabilidad de los datos.
+Tal y como se comentaba anteriormente, **esta variable no está tan fuertemente asociada** a la variable independiente y por ello su RSE aumenta, mientras que el valor de R² ajustado disminuye hasta situarse por debajo del 30%. Por lo tanto, este predictor en solitario tampoco es suficiente como para explicar la mayor parte de la variabilidad de los datos.
 
-A continuación se detallan las conclusiones que se pueden extraer de este apartado de modelos con Regresión Lineal Simple.
+Finalmente, las conclusiones que podemos extraer de los análisis de modelos entrenados con Regresión Lineal Simple se detallan a continuación:
 
-1. **El modelo con un menor RSE y un mayor valor de R² ajustado ha sido el primero en el que intervenía únicamente la variable `Shell_weight`**, la cual estaba más fuertemente correlada con la variable independiente `Ring`. Por lo tanto, se trata de un predictor que aporta suficiente información como para alcanzar por sí solo casi un 40% de explicabilidad de los datos.
+1. El modelo con un **menor RSE y un mayor valor de R² ajustado** ha sido el primero en el que intervenía únicamente la **variable `Shell_weight`**, la cual estaba **más fuertemente correlada con la variable independiente** `Ring`. Por lo tanto, se trata de un predictor que aporta suficiente información como para alcanzar por sí solo casi un 40% de la explicabilidad de los datos.
 
-2. Pese a la extraña distribución y a su menor grado de correlación con la variable independiente, el **predictor `Height` es el que ha proporcionado el segundo mejor modelo** con un 31% de explicabilidad y un RSE de 2.67. Este hecho nos indica que la altura puede identificar a un tercio de los ejemplares de manera independiente. Con una alta probabilidad, estos animales pertenecerán a la categoría de infantes, los cuales es lógico que dispongan de un menor tamaño que los adultos.
+2. Pese a la extraña distribución y a su menor grado de correlación con la variable independiente, el **predictor `Height` es el que ha proporcionado el segundo mejor modelo** con un 31% de explicabilidad y un RSE de 2.67. Este hecho nos indica que la altura puede identificar a un tercio de los ejemplares de manera independiente. Con una alta probabilidad, estas muestras pertenecerán a la categoría de infantes, puesto que parece lógico pensar que estarán caracterizados por una menor altura que los adultos.
 
-3. Finalmente, en modelos sucesivos en los que participen varios predictores, deberemos **eliminar la varaible `Length` puesto que se encuentra fuertemente relacionada con la variable `Diameter`**, y como hemos podido comprobar, este último predictor ha proporcionado un modelo con menor RSE y una mayor explicabilidad de la varaible independiente.
+3. Finalmente, en los modelos con múltiples predictores deberemos de **eliminar la variable `Length`** debido a su alta correlación con el predictor `Diameter`. Si bien proporcionan el mismo tipo de información, esta última variable ha conseguido obtener un modelo con una mayor explicabilidad y menor error, por lo que su información resulta más útil para la predicción de la edad de esta especie.
 
 ### 1.4.2. Regresión Lineal Múltiple
 
-En este apartado se pretende construir diferentes modelos utilizando diversos predictores mediante Regresión Lineal Múltiple para intentar mejorar los resultados del mejor modelo obtenido con Regresión Lineal Simple. Para ello aplicaremos la **técnica backward** en el que comenzamos con un primer modelo en el que se incluyen todos los predictores, para después eliminar aquellos que no sean relevantes. 
+El objetivo de este apartado consiste en realizar diferentes combinaciones de predictores para entrenar modelos con Regresión Lineal Múltiple y mejorar los resultados del mejor modelo obtenido con Regresión Lineal Simple. Para ello aplicaremos la **técnica backward** en el que comenzamos con un primer modelo en el que se incluyen todos los predictores, para después eliminar aquellos que no sean relevantes. 
 
 ```{r}
 # Primer modelo: todos los predictores
@@ -296,30 +298,30 @@ abalone.lm1 <- lm(Ring~., data=abalone.df)
 summary(abalone.lm1)
 ```
 
-En el resumen estadístico podemos observar que considerando todos los predictores hemos conseguido mejorar la explicabilidad de los datos aumentando el valor de R² ajustado hasta un 53%, además de haber reducido el RSE. Sin embargo, podemos apreciar que el **predictor `Length` tiene asociado un p-valor más alto que el umbral** de 0.05, lo que nos indica que puede ser eliminado sin influir en el modelo. Este hecho ya se había previsto anteriormente si recordamos la fuerte correlación existente entre `Diameter` y `Length`. Por lo tanto, eliminamos esta variable y procedemos a entrenar y analizar un segundo modelo.
+En el resumen estadístico podemos observar que, considerando todos los predictores, hemos conseguido mejorar la explicabilidad de los datos aumentando el valor de R² ajustado hasta un 53%, además de haber reducido el RSE. Sin embargo, podemos apreciar que el **predictor `Length` tiene asociado un p-valor muy superior** al umbral de 0.05, lo que nos indica que puede ser eliminado sin influir en el modelo. Este hecho ya se había previsto anteriormente si recordamos la fuerte correlación existente entre `Diameter` y `Length`. Por lo tanto, eliminamos esta variable y procedemos a entrenar un segundo modelo.
 
 ```{r}
 # Segundo modelo: todos los predictores menos Length
 abalone.lm2 <- lm(Ring~.-Length, data=abalone.df)
 summary(abalone.lm2)
 ```
-Tal y como se puede observar, este segundo modelo dispone de la **misma calidad** que el anterior solo que es **más sencillo** puesto que contiene un predictor menos. Observando de nuevo los predictores, podemos apreciar que todos tienen una alta significación estadística pero algunos disponen de p-valores más altos. Como el modelo todavía contiene muchas de las variables iniciales, vamos a tratar de simplificarlo hasta conseguir un error y porcentaje de explicabilidad aceptable. En el tercer modelo vamos a eliminar la variable `Height` puesto que es la que mayor p-valor tiene asociado.
+Tal y como se puede observar, este segundo modelo dispone de la **misma calidad** que el anterior solo que es **más sencillo** puesto que contiene un predictor menos. Observando de nuevo las variables, podemos apreciar que todas tienen una alta significación estadística, pero algunas disponen de p-valores más altos. Como el modelo todavía contiene muchos de los predictores iniciales, vamos a tratar de simplificarlo hasta conseguir un error y porcentaje de explicabilidad aceptable. En el tercer modelo vamos a eliminar la variable `Height` puesto que es la que mayor p-valor tiene asociado.
 
 ```{r}
 # Tercer modelo: todos los predictores menos Length y Height
 abalone.lm3 <- lm(Ring~.-Length-Height, data=abalone.df)
 summary(abalone.lm3)
 ```
-En este tercer modelo se ha reducido ligeramente el valor de R² ajustado y ha aumentado muy levemente el RSE. Sin embargo, al eliminar el predictor `Height` podemos observar cómo los **p-valores de algunas variables han aumentado**, en particular, las dos últimas: `Viscera_weight` y `Shell_weight`. Esto nos indica que la variable `Height` compartía información común a estos dos predictores y al eliminarla, se revalora su importancia en el modelo. No obstante, el primero de ellos sigue distinguiéndose del resto por tener un p-valor más bajo. Vamos a entrenar un cuarto modelo eliminándola para comprobar cuál es el comportamiento.
+En este tercer modelo se ha reducido ligeramente el valor de R² ajustado y ha aumentado muy levemente el RSE. Sin embargo, al eliminar el predictor `Height` podemos observar cómo los **p-valores de algunas variables han aumentado**, en particular, las dos últimas: `Viscera_weight` y `Shell_weight`. Esto nos indica que la variable `Height` comparte cierta información común con estos dos predictores y al eliminarla, **se revalora su importancia** en el modelo. No obstante, el primero de ellos sigue distinguiéndose del resto por tener un p-valor más bajo. Vamos a entrenar un cuarto modelo eliminándola para comprobar cuál es el comportamiento.
 
 ```{r}
 # Cuarto modelo: todos los predictores menos Length, Height y Viscera_weight
 abalone.lm4 <- lm(Ring~.-Length -Height -Viscera_weight, data=abalone.df)
 summary(abalone.lm4)
 ```
-Como podemos apreciar, mientras que el RSE ha aumentado muy ligeramente el porcentaje de explicabilidad también se ha elevado un poco más. Esto nos indica que la **información proporcionada por la variable eliminada no es lo suficientemente importante** como para mantenerla en el modelo. Si bien ya disponemos de un modelo con razonablemente buenas métricas de calidad, creo que podemos simplificarlo aún más. Así, disponemos de un modelo con unas razonablemente buenas métricas de calidad y una mayor sencillez en el conjunto de predictores. 
+Como podemos apreciar, mientras que el RSE ha aumentado muy ligeramente el porcentaje de explicabilidad también se ha elevado un poco más. Esto nos indica que la información proporcionada por **la variable eliminada no es lo suficientemente importante** como para mantenerla en el modelo. Así, hemos conseguido un modelo más simplificado y con unas métricas de calidad razonablemente aceptables. 
 
-A continuación procedemos a añadir **términos no lineales** para intentar mejorar su capacidad de generalización. En el quinto modelo se añade una **interacción entre las varaibles `Shell_weight` y `Diameter`**, con las que se han obtenido dos de los mejores modelos utilizando Regresión Lineal Simple. 
+A continuación procedemos a añadir **términos no lineales** para intentar ajustar más el modelo a los datos y mejorar su capacidad de generalización. En el quinto modelo se añade una **interacción entre las varaibles `Shell_weight` y `Diameter`**, con las que se han obtenido dos de los mejores modelos utilizando Regresión Lineal Simple. 
 
 ```{r}
 # Quinto modelo: interacción entre Shell_weight y Diameter
@@ -327,7 +329,7 @@ abalone.lm5 <- lm(Ring~.-Length -Height -Viscera_weight
                   + Shell_weight*Diameter, data=abalone.df)
 summary(abalone.lm5)
 ```
-Como podemos apreciar en el resumen estadístico, la interacción entre sendas variables provoca la mejora tanto del porcentaje de explicabilidad, que aumenta hasta un 53.9%, mientras que por otro lado produce un ligero decremento del RSE. Esto nos indica que la **combinación de las variables `Shell_weight` y `Diameter`** produce que el modelo se adapte mejor a los datos puesto que **potencia la cantidad de información útil** para predecir la variable `Ring`. Sin embargo, podemos observar que de forma paralela también **reduce la significación estadística de la variable `Sex`**. Una posible explicación puede asociarse a que el tamaño y diámetro de la concha también pueden ser características diferenciadoras para los mismos ejemplares a los que la variable `Sex` ayuda a identificar: los infantes. Resulta lógico pensar que los animales más jóvenes de esta especie poseen conchas de menor tamaño. De hecho, si eliminamos este predictor podemos observar cómo en el sexto modelo las medidas de calidad no se ven demasiado afectadas, y de esta forma, conseguimos reducir la complejidad.
+Como podemos apreciar en el resumen estadístico, la interacción entre sendas variables provoca la mejora tanto del porcentaje de explicabilidad, que aumenta hasta un 53.9%, mientras que por otro lado produce un ligero decremento del RSE. Esto nos indica que la **combinación de las variables `Shell_weight` y `Diameter`** permite un mayor ajuste a los datos, puesto que **potencia la información útil** para predecir la variable `Ring`. Sin embargo, podemos observar que de forma paralela también **reduce la significación estadística de la variable `Sex`**. Una posible explicación puede asociarse a que el tamaño y diámetro de la concha también pueden ser características diferenciadoras para los mismos ejemplares a los que la variable `Sex` ayuda a identificar: los infantes. Resulta lógico pensar que los animales más jóvenes de esta especie poseen conchas de menor tamaño. De hecho, si **eliminamos este predictor** podemos observar cómo en el sexto modelo las **medidas de calidad no se ven demasiado afectadas**, y de esta forma, conseguimos reducir la complejidad.
 
 ```{r}
 # Sexto modelo: eliminando la variable Sex
@@ -335,7 +337,7 @@ abalone.lm6 <- lm(Ring~.-Length -Height -Viscera_weight -Sex
                   + Shell_weight*Diameter, data=abalone.df)
 summary(abalone.lm6)
 ```
-Realizando varios experimentos que no se incluyen en esta memoria para no extenderla demasiado, he podido comprobar que añadiendo términos cuadráticos también se consigue cierta mejora en la calidad del modelo, a costa de añadir complejidad. Un ejemplo representativo es el que se muestra en el séptimo modelo, en el que se añaden los **términos cuadráticos de dos variables asociadas al peso: `Shucked_weight` y `Whole_weight`**. Como se puede apreciar, el porcentaje de R² ajustado aumenta a un 55%, mientras que el RSE disminuye cuatro centésimas. 
+Realizando varios experimentos que no se incluyen en esta memoria para no extenderla demasiado, he podido comprobar que añadiendo términos cuadráticos también se consigue cierta mejora en la calidad del modelo, a costa de añadir complejidad. Un ejemplo representativo es el que se muestra en el séptimo modelo, en el que se añaden los **términos cuadráticos de dos medidas del peso: `Shucked_weight` y `Whole_weight`**. Como se puede apreciar, el porcentaje de R² ajustado aumenta a un 55%, mientras que el RSE disminuye cuatro centésimas. Se trata de otra forma con la que poder potenciar la información proporcionada individualmente por estos dos predictores.
 
 ```{r}
 # Séptimo modelo: términos cuadráticos de Shucked_weight y Whole_weight
@@ -344,11 +346,11 @@ abalone.lm7 <- lm(Ring~.-Length -Viscera_weight -Sex +
                     I(Whole_weight^2), data=abalone.df)
 summary(abalone.lm7)
 ```
-En comparación con el modelo obtenido mediante Regresión Lineal Simple, podemos observar que ha **aumentado la explicabilidad en más de un 16%, mientras que se reduce el error en 0.36 décimas**. Como principal desventaja se encuentra el aumento de la complejidad del modelo, puesto que en el múltiple intervienen cinco predictores, una interacción y dos términos cuadráticos, mientras que en el modelo simple solo uno.
+En comparación con el modelo obtenido mediante Regresión Lineal Simple, podemos observar que ha **aumentado la explicabilidad en más de un 16%, mientras que se reduce el error en 0.36 décimas**. Como principal desventaja se encuentra el aumento de la complejidad del modelo, puesto que en el múltiple intervienen cinco predictores, una interacción y dos términos cuadráticos, mientras que en el modelo simple solo dispone de una única variable dependiente.
 
 ### 1.4.3. KNN
 
-En esta sección se pretende entrenar varios modelos utilizando el **algoritmo KNN en combinación con Validación Cruzada**. Para ello, utilizaremos las cinco particiones del dataset para el entrenamiento y validación en cada una de las iteraciones. El objetivo consiste en analizar si el mejor modelo entrenado con estas técnicas dispone de una mejor capacidad predictora, que el mejor modelo entrenado con Regresión Lineal Múltiple. Para ello vamos a utilizar la última formulación que ha producido los mejores resultados. 
+En esta sección se pretende entrenar varios modelos utilizando el **algoritmo KNN en combinación con Validación Cruzada**. Para ello, utilizaremos las cinco particiones de entrenamiento y validación en cada una de las iteraciones. El objetivo consiste en analizar si el mejor modelo entrenado con estas técnicas dispone de una mejor capacidad predictora que el mejor modelo entrenado con Regresión Lineal Múltiple. Para ello vamos a utilizar la última formulación que ha producido los mejores resultados. 
 
 ```{r}
 # Función para aplicar validación cruzada para entrenar y validar 5
@@ -395,11 +397,11 @@ knnMSEtrain
 knnMSEtest <- mean(sapply(1:5, run_knn_fold, nombre, "test", "RLM"))
 knnMSEtest
 ```
-Como podemos observar, el **error obtenido en el conjunto de entrenamiento es mayor que el del mejor modelo con Regresión Lineal Múltiple**. Esto demuestra que no siempre una misma formulación proporciona buenos resultados para algoritmos diferentes, como ha sido esta comparación entre KNN y Regresión Lineal Múltiple. 
+Como podemos observar, el **error obtenido en el conjunto de entrenamiento es mayor que el del mejor modelo con Regresión Lineal Múltiple**. Esto demuestra que no siempre una misma formulación proporciona buenos resultados para algoritmos diferentes, como ha sido el caso de esta comparación entre KNN y Regresión Lineal Múltiple. 
 
 ## 1.5. Comparación de algoritmos
 
-Para finalizar este apartado de regresión se pretende realizar una comparación entre el comportamiento de diversos algoritmos sobre diferentes datasets. En primer lugar, aplicamos la Validación Cruzada para entrenar **cinco modelos con Regresión Lineal Múltiple y otros cinco con el algoritmo KNN**, tal y como se realizó en la sección anterior, solo que en este caso **se consideran todos los predictores**. 
+Para finalizar este apartado de regresión, se realiza una comparación entre el comportamiento de diversos algoritmos aplicados sobre diferentes datasets. En primer lugar, aplicamos la Validación Cruzada para entrenar **cinco modelos con Regresión Lineal Múltiple y otros cinco con el algoritmo KNN**, tal y como se realizó en la sección anterior, solo que en este caso **se consideran todos los predictores**. 
 
 ```{r}
 # Función para aplicar validación cruzada para entrenar y validar 5
@@ -440,7 +442,7 @@ knnMSEtrain
 knnMSEtest <- mean(sapply(1:5, run_knn_fold, nombre, "test"))
 knnMSEtest
 ```
-Una vez disponemos de los errores medios de entrenamiento y validación para cada técnica, los sustituimos en los ficheros `regr_train_alumnos.csv` y `regr_test_alumnos.csv` donde se encuentran los resultados para el dataset `abalone`. A continuación, cargamos la información de sendos archivos para comenzar a realizar las comparaciones estadísticas. En primer lugar, enfrentamos los algoritmos **Regresión Lineal Múltiple y KNN utilizando el test de Wilcoxon** con el objetivo de conocer si existen diferencias significativas entre sendas técnicas. La hipótesis nula afirma que ambos algoritmos se comportan de forma semejante, mientras que la alternativa determina que no son iguales. 
+Una vez disponemos de los errores medios de entrenamiento y validación para cada técnica, los sustituimos en los ficheros `regr_train_alumnos.csv` y `regr_test_alumnos.csv`, en la línea donde se encuentran los resultados para el dataset `abalone`. A continuación, cargamos la información de sendos archivos para comenzar a realizar las comparaciones estadísticas. En primer lugar, enfrentamos los algoritmos **Regresión Lineal Múltiple y KNN utilizando el test de Wilcoxon** con el objetivo de conocer si existen diferencias significativas entre sendas técnicas. La hipótesis nula afirma que ambos algoritmos se comportan de forma semejante, mientras que la alternativa determina que no son iguales. 
 
 ```{r}
 # Leemos los resultados sobre el conjunto de entrenamiento
@@ -460,7 +462,6 @@ difs <- (tablatst[,1] - tablatst[,2]) / tablatst[,1]
 wilc_1_2 <- cbind(ifelse (difs<0, abs(difs)+0.1, 0+0.1), 
                   ifelse (difs>0, 	abs(difs)+0.1, 0+0.1))
 colnames(wilc_1_2) <- c(colnames(tablatst)[1], colnames(tablatst)[2])
-head(wilc_1_2)
 # Aplicamos el test de Wilcoxon sobre Regresión Lineal Múltiple y KNN
 LMvsKNNtst <- wilcox.test(wilc_1_2[,1], wilc_1_2[,2], 
                           alternative = "two.sided", paired=TRUE)
@@ -473,7 +474,7 @@ pvalue
 ```
 Como podemos apreciar, el p-valor resultante de aplicar el test de Wilcoxon es mayor que el umbral 0.05, por lo que nos revela que **no se puede rechazar la hipótesis nula** de que el algoritmo KNN tiene el mismo comportamiento que Regresión Lineal Múltiple sobre los datasets experimentados Así, se puede determinar que solo existe un 23.4% de confianza de que sean distintos. 
 
-A continuación, **añadimos el algoritmo M5 a la comparación. Para ello aplicamos el test de Friedman**, que extiende el objetivo del test de Wilcoxon pero a un número mayor de dos muestras. Tal y como se puede observar en los resultados, el p-valor resultante no es menor que el umbral prefijado de 0.05, por lo que **tampoco se puede rechazar la hipótesis nula de que los tres algoritmos tienen el mismo comportamiento**. Para determinar cuáles pueden ser los algoritmos que destaquen sobre el resto, vamos a agrupar los algoritmos por pares siendo 1:Regresión Lineal, 2:KNN y 3:M5. El objetivo es aplicar **múltiples tests de Wilcoxon aplicando la penalización por pasos de Holm** con la que controlar el error acumulado por realizar varios tests sobre la misma población. Como podemos observar en la tabla comparativa, ninguno de los tests ha rechazado la hipótesis nula de que los pares de algoritmos comparados son similares. Por lo tanto, **no existe evidencia estadística que confirme que existen diferencias entre la Regresión Lineal Múltiple, KNN y M5**.
+A continuación, **añadimos el algoritmo M5 a la comparación**. Para ello aplicamos el **test de Friedman**, que extiende el objetivo del test de Wilcoxon pero para más de dos participantes Tal y como se puede observar en los resultados, el p-valor resultante no es menor que el umbral prefijado de 0.05, por lo que **tampoco se puede rechazar la hipótesis nula de que los tres algoritmos tienen el mismo comportamiento**. Aunque no hay evidencias estadísticas de las diferencias entre las tres técnicas, vamos a agrupar los algoritmos por pares siendo 1:Regresión Lineal, 2:KNN y 3:M5. El objetivo consiste en identificar cuáles de ellos disponen de un comportamiento diferente. Con este objetivo, se aplican **múltiples tests de Wilcoxon aplicando la penalización por pasos de Holm** con la que controlar el error acumulado por realizar varios tests sobre la misma población. Como podemos observar en la tabla comparativa, **ninguno de los tests ha rechazado la hipótesis nula** de que los pares de algoritmos comparados son similares. Por lo tanto, **no existe evidencia estadística** que confirme que existen diferencias entre la Regresión Lineal Múltiple, KNN y M5.
 
 ```{r}
 # Aplicamos el test de Friedman para comparar los tres algoritmos simultáneamente
