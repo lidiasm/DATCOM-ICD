@@ -51,10 +51,16 @@ El dataset con el que se procede a trabajar para este primer apartado de aplicac
 A continuación, procedemos a analizar las principales propiedades de este conjunto de datos. En primer lugar cargamos el dataset desde el fichero `abalone.dat`, especificamos el separador para distinguir los valores de cada columna y asignamos manualmente el nombre de las variables a partir de la líneas `@inputs` y `@outputs` del fichero. Como podemos apreciar en el siguiente *chunk*, este dataset cuenta con **4.177 registros y 9 variables**. En el caso de la columna que indica el **género podemos apreciar que ya está codificada en este fichero**, por lo que asumiremos que las etiquetas numéricas corresponden a los siguientes valores nominales: 1-masculino, 2-femenino y 3-infante.
 
 ```{r}
-# Nombres de las variables según el fichero `abalone.data`
+# Nombres de las variables según el fichero `abalone.dat`
 abalone.colnames <- c("Sex", "Length", "Diameter", "Height", "Whole_weight", 
                   "Shucked_weight", "Viscera_weight", "Shell_weight", "Ring")
 # Leemos el dataset del fichero `abalone.dat`
+# Parámetros
+# 1. Ruta hacia el fichero
+# 2. Las columnas no se encuentran en la primera fila
+# 3. Ignoramos las 13 primeras filas hata alcanzar los datos
+# 4. Separador de columnas
+# 5. Nombres de las columnas
 abalone.df <- read.table("./abalone/abalone.dat", header=FALSE, skip=13, 
                          sep=",", col.names=abalone.colnames)
 # Dimensión 
@@ -62,7 +68,7 @@ dim(abalone.df)
 # Tipos de las variables
 str(abalone.df)
 ```
-A continuación aplicamos la función `summary` para obtener un resumen con las principales medidas estadísticas de cada variable. Tal y como se puede observar, el primer aspecto interesante ocurre en la variable `Sex` puesto que según sus cuartiles, en el primer intervalo se encuentran mayoritariamente ejemplares masculinos (etiqueta 1), mientras que en el último intervalo destacan los denominados infantes (etiqueta 3). Por otro lado, podemos apreciar que el ejemplar intermedio es femenino puesto que la mediana es 2. Esta distribución puede indicarnos que **esta variable de clase está balanceada** y existe aproximadamente el mismo número de ejemplares para cada categoría.
+Aplicamos la función `summary` para obtener un resumen con las principales medidas estadísticas de cada variable. Tal y como se puede observar, el primer aspecto interesante ocurre en la variable `Sex` puesto que según sus cuartiles, en el primer intervalo se encuentran mayoritariamente ejemplares masculinos (etiqueta 1), mientras que en el último intervalo destacan los denominados infantes (etiqueta 3). Por otro lado, podemos apreciar que el ejemplar intermedio es femenino puesto que la mediana es 2. Esta distribución puede indicarnos que **esta variable de clase está balanceada** y existe aproximadamente el mismo número de ejemplares para cada categoría.
 
 En relación a las dimensiones de la concha, podemos observar que no existe demasiada diferencia entre los respectivos cuartiles de las variables `Length` y `Diameter`. Además, sus medias y medianas son valores más cercanos al dato máximo, por lo que podemos intuir que existe una **concentración de ejemplares con una concha de mayor envergadura**. Sin embargo, este hecho contrasta con los valores de la variable `Height`, en los cuales destacan los siguientes aspectos:
 
@@ -111,8 +117,9 @@ genders <- c("Masculino", "Femenino", "Infante")
 # 1. Convertimos las etiquetas a factores para obtener la frecuencia por clase
 # 2. Contorno negro a las barras y la leyenda
 # 3. Fondo blanco
-# 4. Ocultamos la etiqueta del eje X y establecemos la etiqueta del eje Y
-# 5. Frecuencia de cada clase sobre sus respectivas barras
+# 4. Establecemos el nombre y las etiquetas de la leyenda para cada género
+# 5. Ocultamos la etiqueta del eje X y establecemos la etiqueta del eje Y
+# 6. Frecuencia de cada clase sobre sus respectivas barras
 ggplot(abalone.df, aes(x=factor(Sex), fill=factor(Sex))) + 
   geom_bar(color="black") + theme_minimal() + 
   scale_fill_discrete(name='Géneros', labels=genders) + 
@@ -151,16 +158,16 @@ qqnorm(abalone.df$Ring, main="Gráfico QQ de Ring")
 qqline(abalone.df$Ring)
 ```
 
-Tal y como podemos apreciar en el primer gráfico QQ asociado a `Height`, los cuantiles teóricos y empíricos coinciden prácticamente al 100%, a excepción de dos casos. Como consecuencia, este predictor parece que **gráficament puede seguir una distribución normal**. No obstante, el caso de la variable independiente es diferente, puesto que parece haber una menor coincidencia entre ambas medidas, lo cual puede significar que la variable **`Ring` no sigue una distribución normal**. 
+Tal y como podemos apreciar en el primer gráfico QQ asociado a `Height`, los cuantiles teóricos y empíricos coinciden prácticamente al 100%, a excepción de dos casos. Como consecuencia, este predictor parece que **gráficamente puede seguir una distribución normal**. No obstante, el caso de la variable independiente es diferente, puesto que parece haber una menor coincidencia entre ambas medidas, lo cual puede significar que la variable **`Ring` no sigue una distribución normal**. 
 
 Antes de aplicar el test de Shapiro-Wilk’s sobre cada variable, mi hipótesis es que todas las variables parecen seguir una distribución normal, a excepción del término independiente `Ring`. Como se realizó anteriormente, se presentan los resultados de los tests en un `dataframe` para vincular cada variable con su p-valor asociado. Tal y como podemos apreciar, **todos los tests han rechazado la hipótesis nula** puesto que en todos se obtienen p-valores menores que el umbral establecido en 0.05. Esto significa que **ninguna de las variables sigue una distribución normal**, lo cual aumenta la importancia de utilizar tests estadísticos en lugar de métodos gráficos que pueden inducirnos a errores.
 
 ```{r}
 # Aplicamos el test de Shapiro-Wilk’s para cada variable extrayendo el p-valor
-abalone.shapiros <- sapply(c(1:ncol(abalone.df)), 
+abalone.shapiros <- sapply(c(2:ncol(abalone.df)), 
                      function(x) shapiro.test(abalone.df[,x])$p.value)
 # Definimos un dataframe con los resultados para cada variable
-abalone.shapiros.df <- data.frame(Variables=colnames(abalone.df), 
+abalone.shapiros.df <- data.frame(Variables=colnames(abalone.df%>%select(-Sex)), 
                                   PValores=abalone.shapiros)
 abalone.shapiros.df
 ```
@@ -214,6 +221,7 @@ En esta sección se pretende estudiar los coeficientes de correlación de todas 
 corrplot(cor(abalone.df), method='number', order='alphabet',
          type='lower', tl.cex=0.7, number.cex=0.7)
 ```
+
 En función de las correlaciones resultantes entre los predictores y la variable independiente, podemos observar que la mayoría de sus coeficientes demuestran una relación moderada, a excepción de `Shell_weight`. Esta variable es la que presenta un valor más alto de 0.63 por lo que parece que es el predictor **más relacionado con el término independiente**. Como consecuencia, se postula como uno de los predictores que más probabilidad tiene de ayudar en la construcción de los modelos.
 
 ### 1.3.3. Diagramas de cajas
@@ -485,3 +493,179 @@ tam <- dim(tablatst)
 groups <- rep(1:tam[2], each=tam[1])
 pairwise.wilcox.test(as.matrix(tablatst), groups, p.adjust = "holm", paired = TRUE)
 ```
+
+# 2. Apartado de Clasificación
+
+En este segundo apartado el dataset con que se procede a trabajar se denomina **`vehicle`**. Como en el caso anterior, comenzamos buscando información sobre sus datos y características principales. Según la descripción del repositorio [UCI Machine Learning](https://archive.ics.uci.edu/ml/datasets/Statlog+(Vehicle+Silhouettes)), este conjunto de datos está compuesto por las **propiedades de imágenes relativas a las siluetas de diferentes tipos de vehículos**. Los aspectos más destacables de este dataset se listan a continuación:
+
+* Dispone de un total de **946 muestras y 19 atributos**. A continuación se presenta la información que he podido encontrar sobre cada uno de ellos.
+
+| Variable | Tipo | Descripción | 
+|---|---|---|
+| Compactness | Entero | Relación entre el área y el volumen. Una figura compacta suele ser pequeña y redonda. 
+| Circularity, Distance_circularity | Enteros | Relación entre la forma del área y del perímetro. |
+| Radius_ratio | Entero | Relación entre el mínimo y máximo radio de un objeto. Ambos radios se refieren a los puntos más y menos cercanos dentro de una elipse. |
+| Praxis_aspect_ratio, Max_length_aspect_ratio | Enteros | Relación entre el radio mínimo y máximo de un objeto. | 
+| Scatter_ratio | Entero | Relación entre la inercia del radio mínimo y máximo.|
+| Elongatedness | Entero | Relación entre el área y el ancho reducido de un objeto. |
+| Praxis_rectangular, Length_rectangular | Enteros | Relación entre el área y el ancho por el alto de un objeto. |
+| Major_variance, Minor_variance | Enteros | Segundo momento del radio mínimo y del radio máximo. Un momento es la captura de una imagen con unas propiedades o interpretaciones específicas. |
+| Gyration_radius | Entero | Relación entre las dos propiedades anteriores.  |
+| Major_skewness, Minor_skewness | Enteros | Asimetría de una imagen en ambos ejes.  |
+| Minor_kurtosis, Major_kurtosis | Enteros | Forma de la imagen en ambos ejes |
+| Hollows_ratio | Entero | Relación entre el área de los píxeles no activos y el perímetro de una imagen.  |
+| Class | Nominal | El tipo de vehículo asociado a la silueta: van, saab, bus, opel |
+
+* Suele ser utilizado como un **problema de clasificación** para determinar el tipo de un vehículo a partir de su contorno.
+
+* No se afirma ni se niega la existencia de valores perdidos.
+
+## 2.1. Análisis Exploratorio de Datos General
+
+A continuación, se presentan las principales características de este dataset. En primer lugar, cargamos el conjunto de datos completo desde el fichero `vehicle.dat`, replicando el proceso seguido para el anterior dataset de regresión. Como podemos apreciar, este dataset dispone de **845 registros y 19 atributos**, todos numéricos a excepción de la variable `Class` que contiene valores nominales. 
+
+```{r}
+# Nombres de las variables según el fichero `vehicle.dat`
+vehicle.colnames <- c("Compactness", "Circularity", "Distance_circularity", "Radius_ratio", "Praxis_aspect_ratio", "Max_length_aspect_ratio", "Scatter_ratio", "Elongatedness", "Praxis_rectangular", "Length_rectangular", "Major_variance", "Minor_variance", "Gyration_radius", "Major_skewness", "Minor_skewness", "Minor_kurtosis", "Major_kurtosis", "Hollows_ratio", "Class")
+# Leemos el dataset del fichero `vehicle.dat`
+# Parámetros
+# 1. Ruta hacia el fichero
+# 2. Las columnas no se encuentran en la primera fila
+# 3. Ignoramos las 24 primeras filas hata alcanzar los datos
+# 4. Separador de columnas
+# 5. Nombres de las columnas
+vehicle.df <- read.table("./vehicle/vehicle.dat", header=FALSE, skip=24, 
+                         sep=",", col.names=vehicle.colnames)
+# Dimensión 
+dim(vehicle.df)
+# Tipos de las variables
+str(vehicle.df)
+```
+Como en el apartado anterior, aplicamos la función `summary` para obtener un resumen estadístico de cada una de las variables. El primer aspecto destacable de este dataset es que sus predictores disponen de **escalas de valores muy diferentes**. Esta característica se deberá tener en cuenta al construir los modelos de clasificación para que no se vean influenciados por aquellas variables con escalas mayores. La segunda propiedad más relevante es que, como en el apartado anterior, la **variable nominal `Class` también se encuentra balanceada** puesto que dispone de un número razonablemente equivalante de muestras para cada categoría. Este hecho indica que existe una representación equitativa para cada uno de los vehículos que se pretenden identificar.
+
+Debido a que se trata de un conjunto de datos con un número mayor de variables y orientado a una temática muy particular y desconocida para mí, pese a haber buscado información sobre cada atributo, no puedo realizar un estudio tan exhaustivo como se ha efectuado con el dataset anterior. No obstante, si nos ceñimos a las medidas estadísticas, podemos observar que la **mayoría de variables disponen de intervalos de valores más amplios**, puesto sus mínimos y máximos valores se encuentran más alejados. Aunque existen algunas excepciones, como las variables `Circularity`, `Praxis_rectangular` y `Major_kurtosis` cuyos rangos de valores son de menor tamaño. 
+
+Observando los cuartiles de cada una de las variables, podemos apreciar que en **muchos de los predictores las diferencias entre Q1 y Q3 son mínimas**. Esto indica que existe una baja variabilidad en sus datos y, por ende, una concetración de individuos con valores cercanos en los tres primeros intervalos. Un ejemplo representativo es la variable `Major_skewness`, cuyo mínimo es de 59 y su valor máximo es 135. Sin embargo, su primer cuartil es 67 mientras que su tercer cuartil tiene un valor de 75. Este hecho nos indica que la mayoría de figuras se caracterizan por una asimetría situada en el intervalo [59, 75]. Son pocas las variables que disponen de una mayor dispersión en sus datos, como son los casos de `Radius_ratio`, `Scatter_ratio`, `Gyration_radius` y `Minor_variance`, puesto que la diferencia entre sus primeros y terceros cuartiles es más considerable.
+
+```{r}
+# Resumen del dataset
+summary(vehicle.df)
+```
+Observando la variable `Praxis_aspect_ratio` podemos apreciar que existe una concentración de vehículos cuyos radios se encuentran muy próximos, ya que la diferencia entre sus cuartiles es mínima. Considerando que estos radios parecen pertenecer a la forma de una elipse, podemos intuir que existe una **concetración de siluetas cuya altura y anchura son similares**. Como el dataset se basa en imágenes de vehículos, una posible razón para esta teoría podría hacer referencia a la existencia de una **mayor cantidad de datos sobre coches** que referentes a otros vehículos con medidas físicas más desiguales, como son las caravanas y los autobuses. Esta hipótesis puede apoyarse en dos relaciones más:
+
+1. En la poca dispersión de dos medidas relacioandas con el área y el perímetro de un objeto: `Praxis_rectangular` y  `Length_rectangular`.
+
+2. Y también en la poca variabilidad de las tres primeras variables asociadas a la compactación y la forma circular de una silueta.
+
+En el caso de las medidas más familiares, podemos apreciar que tanto el grado de asimetría como de curtosis son menores en el radio mínimo, que conecta los puntos más cercanos, y mayores en el radio máximo. Esta característica parece lógica puesto que es más probable que existan **más concentraciones de datos en un espacio mayor**.
+
+### 2.1.1. Hipótesis Iniciales
+
+En función de las conclusiones estadísticas extraídas anteriormente, a continuación se plantea un conjunto de hipótesis iniciales sobre los datos, predictores y la variable independiente.
+
+1. Como ocurría en el apartado anterior, en este dataset la variable `Class` dispone de un **número equivalente de muestras para cada tipo de vehículo**, por lo que sus categorías se encuentran balanceadas. Se trata de una gran ventaja puesto que favorece el entrenamiento de modelos **sin introducir el sesgo relativo a una clase predominante**.
+
+2. Mientras que la mayoría de **predictores disponen de intervalos de valores más amplios**, no ocurre lo mismo con los **cuartiles, cuyos valores son más cercanos**. Esto significa que existe una concentración de valores similares en la mayor parte de los rangos de datos, a excepción de algunas muestras que disponen de valores más extremos. Una posible razón para este hecho es que **dos de los cuatro tipos de vehículos disponibles son marcas de automóviles**, por lo que las diferencias entre ambos pueden ser mínimas. Esta hipótesis también podría explicar la **concentración de muestras con pocas diferencias entre su radio mínimo y máximo**.
+
+3. Finalmente, considerando que los atributos de este dataset hacen referencia a las siluetas de diversos vehículos, podemos intuir que aquellas muestras con un **mayor grado de asimetría pueden asociarse a vehículos de mayor tamaño**, como los autobuses y furgonetas. Por lo tanto, esta variable puede jugar un papel fundamental en el entrenamiento de modelos de clasificación.
+
+## 2.2. Análisis Exploratorios Univariantes
+
+Como en el apartado de regresión, a continuación se pretende realizar un análisis detallado para cada variable dependiendo de su tipo de datos. Para las **variables nominales representaremos la frecuencia de sus categorías** en un gráfico de barras, mientras que para los **predictores numéricos** realizaremos un estudio sobre su **varianza, desviación típica, grado de asimetría, tipo de curtosis y de distribución**.
+
+### 2.2.1. Variables nominales
+
+Para este dataset solo existe la única variable categórica coincide con la variable independiente que se pretende predecir. Según hemos podido observar en el resumen estadístico, la **variable `Class` está balanceada**, y tal y como podemos apreciar en el gráfico, dispone de un número muy similar de ejemplos para cada tipo de vehículo.
+
+```{r}
+# Parámetros:
+# 1. Contorno negro a las barras y la leyenda
+# 2. Fondo blanco
+# 3. Ocultamos la etiqueta del eje X y establecemos la etiqueta del eje Y
+# 4. Frecuencia de cada clase sobre sus respectivas barras
+ggplot(vehicle.df, aes(x=Class, fill=Class)) +
+geom_bar(color="black") + theme_minimal() +
+scale_fill_discrete(name='Vehículos') +
+labs(x="", y="Frecuencias") +
+geom_text(stat='count', aes(label=..count..), vjust=2)
+```
+
+### 2.2.2. Variables numéricas
+
+En la segunda parte de los análisis exploratorios individuales procedemos a calcular las medidas estadísticas comentadas anteriormente, repitiendo el proceso realizado para el dataset de regresión. 
+
+```{r}
+# Cálculo de la varianza para cada variable numérica
+vehicle.vars <- sapply(c(1:(ncol(vehicle.df)-1)), function(x) var(vehicle.df[,x]))
+# Cálculo de la desviación típica, asimetría y curtosis
+vehicle.statistics <- data.frame(describe(vehicle.df%>%select(-Class)))
+# Dataframe con todas las medidas estadísticas por variable numérica
+vehicle.statistics <- vehicle.statistics %>% select(c('sd', 'skew', 'kurtosis'))
+cbind(var=vehicle.vars, vehicle.statistics)
+```
+
+Tal y como predijimos en las hipótesis iniciales, la mayoría de predictores se caracterizan por una **notoria dispersión en sus datos**, siendo especialmente acusada en el caso de `Radius_ratio`, `Scatter_ratio`, `Minor_variance`, `Major_variance` y `Gyration_radius`. Este hecho explica su gran variabilidad de valores y determina que existen muestras de muy diversas características. Apoyando esta teoría podemos observar los valores de las desviaciones típicas, los cuales también son más altos para aquellos predictores con una mayor variabilidad. Como consecuencia, podemos afirmar que muchas de las **muestras disponen de valores considerablemente lejanos** a las medias para cada predictor. Existen dos posibles explicaciones para esta situación, por un lado dependiendo de los ángulos en los que se hayan tomado las imágenes para cada vehículo, las propiedades pueden variar enormemente, mientras que por otro se encuentran las diferencias físicas entre los diferentes tipos de vehículos. 
+
+En referencia a la forma de la distribución, podemos observar que la mayoría de variables disponen de un coeficiente de asimetría por debajo de 0.5, por lo que la **mayoría de predictores parecen tener distribuciones simétricas**. Sin embargo, existen algunos casos excepcionales como `Scatter_ratio`, `Praxis_rectangular`, `Minor_variance`, `Minor_skewness` y `Minor_kurtosis` con una **moderada asimetría positiva**, por lo que estas variables se caracterizan por tener una concentración de datos a la derecha. Los casos más extremos son los predictores `Praxis_aspect_ratio`, `Max_length_aspect_ratio` y `Major_skewness` cuyos coeficientes de asimetría son superiores a 2 y por ello disponen de una **acusada asimetría positiva** con unas considerables concentraciones de muestras también a la derecha. Mediante esta medida estadística podemos intuir que existe una multitud de vehículos con valores sumamente extremos que producen distribuciones asimétricas en ciertas variables. La mayoría se encuentran asociadas con las relaciones entre las dimensiones de las imágenes y los radios de las figuras. Asimismo, el hecho de que **todas las asimetrías se encuentren a la derecha supone que se trata de valores cercanos al límite superior del intervalo**, por lo que pueden estar asociados a vehículos de mayor tamaño, como los autobuses y caravanas. 
+
+Una situación similar ocurre con el coeficiente de curtosis. La **mayoría de predictores disponen de un valor  cercano a 0**, lo que indica que la forma de sus distribuciones pueden ser similares a la distribución normal. No es el caso de las variables `Praxis_aspect_ratio`, `Max_length_aspect_ratio` y `Major_skewness`, cuyos valores son considerablemente altos. Como consecuencia sus distribuciones presentan enormes concentraciones de datos en una zona específica del intervalo, representándose con un pico muy pronunciado.
+
+A continuación procedemos a realizar un estudio sobre la normalidad de cada uno de los predictores. De nuevo, vamos a experimentar con un método visual para las variables más peculiares y un método estadístico para determinar con certeza la normalidad de cada predictor. Aplicaremos los gráficos QQ a las tres variables anteriores que han destacado tanto por su asimetría como por su coeficiente de curtosis.
+
+```{r}
+# Gráfico QQ para la variable dependiente `Praxis_aspect_ratio`
+qqnorm(vehicle.df$Praxis_aspect_ratio, main="Gráfico QQ de Praxis_aspect_ratio")
+qqline(vehicle.df$Praxis_aspect_ratio)
+# Gráfico QQ para la variable dependiente `Max_length_aspect_ratio`
+qqnorm(vehicle.df$Max_length_aspect_ratio, main="Gráfico QQ de Max_length_aspect_ratio")
+qqline(vehicle.df$Max_length_aspect_ratio)
+# Gráfico QQ para la variable dependiente `Praxis_aspect_ratio`
+qqnorm(vehicle.df$Major_skewness, main="Gráfico QQ de Major_skewness")
+qqline(vehicle.df$Major_skewness)
+```
+
+Como podemos apreciar, **los tres gráficos son muy similares**, sus cuantiles teóricos y empíricos coinciden razonablemente en el intervalo [-1, 1] y son diferentes al principio y especialmente al final, debido a las colas que les caracterizan a la derecha de la distribución. Debido a esta gigantesca concentración de altos valores, mi hipótesis inicial es que **ninguna de las tres variables siguen una distribución normal**. Para comprobar esta teoría y la normalidad de las restantes variables numéricas, procedemos a aplicar el test de Shapiro-Wilk’s sobre cada una. Recordemos que la hipótesis nula determina que sí sigue una distribución normal frente a la hipótesis alternativa contraria. Como podemos observar en los resultados, **todos los tests han vuelto a rechazar la hipótesis nula** puesto que sus p-valores son menores que el umbral establecido en 0.05. Así, con un 95% de evidencia estadística podemos determinar que **ninguno de los predictores de este dataset sigue una distribución normal**. 
+
+```{r}
+# Aplicamos el test de Shapiro-Wilk’s para cada variable extrayendo el p-valor
+vehicle.shapiros <- sapply(c(1:(ncol(vehicle.df)-1)),
+function(x) shapiro.test(vehicle.df[,x])$p.value)
+# Definimos un dataframe con los resultados para cada variable
+vehicle.shapiros.df <- data.frame(Variables=colnames(vehicle.df%>%select(-Class)),
+PValores=vehicle.shapiros)
+vehicle.shapiros.df
+```
+
+## 2.3. Análisis Exploratorio Multivariante
+
+Como en el apartado de regresión, a continuación presentamos un conjunto de análisis globales en los que se involucran a todas las variables de este dataset. El principal objetivo consiste en visualizar y determinar las relaciones y patrones existentes entre ellos que ayuden a la predicción de la variable `Class`.
+
+### 2.3.1. Matriz de Puntos
+
+A diferencia del apartado de regresión, en este caso no se puede representar una única matriz de puntos con todas las variables disponibles, puesto que su mayor número provoca que el gráfico resultante sea imposible de interpretar. Para resolver este inconveniente vamos a hacer **dos grupos de diez variables para graficar dos matrices de puntos, incluyendo en ambas la variable independiente `Class`**. Como la información disponible sobre cada predictor es mínima, he tratado de componer los **grupos según los nombres en común y sus posibles significados**, de modo que el primero de ellos contiene las medidas relativas a los diferentes ratios, mientras que en el segundo se encuentran las métricas asociadas a los ejes de las siluetas. De nuevo, **diferenciamos las muestras según el tipo de vehículo** asignándoles un color y forma diferente. A continuación se presentan las distintas asociaciones: naranja-`bus`, verde-`opel`, azul-`saab`, rosa-`van`.
+
+```{r}
+# Primer grupo de variables para representar una matriz de puntos
+vehicle.first_group <- c("Circularity", "Distance_circularity", "Praxis_aspect_ratio", "Max_length_aspect_ratio", "Praxis_rectangular", "Length_rectangular", "Radius_ratio", "Scatter_ratio", "Hollows_ratio", "Class")
+# Parámetros
+# 1. Representar solo la diagonal inferior porque la matriz es simétrica
+# 2. Diferenciar los ejemplares por género cambiando el color y su forma
+# 3. Representar curvas de densidad en la diagonal
+scatterplotMatrix(vehicle.df[vehicle.first_group], diagonal=list(method="density"),
+upper.panel=NULL, col=c("orange", "green", "blue", "pink"),
+group=as.factor(vehicle.df$Class))
+```
+
+
+```{r}
+# Segundo grupo de variables para representar una segunda matriz de puntos
+vehicle.second_group <- c("Major_variance", "Minor_variance", "Major_skewness", "Minor_skewness", "Minor_kurtosis", "Major_kurtosis", "Gyration_radius", "Compactness", "Elongatedness", "Class")
+# Parámetros
+# 1. Representar solo la diagonal inferior porque la matriz es simétrica
+# 2. Diferenciar los ejemplares por género cambiando el color y su forma
+# 3. Representar curvas de densidad en la diagonal
+scatterplotMatrix(vehicle.df[vehicle.second_group], diagonal=list(method="density"),
+upper.panel=NULL, col=c("orange", "green", "blue", "pink"),
+group=as.factor(vehicle.df$Class))
+```
+
