@@ -185,12 +185,12 @@ Por otro lado, si observamos las curvas de densidad de las variables `Length` y 
 
 ```{r}
 # Parámetros
-# 1. Representar solo la diagonal inferior porque la matriz es simétrica
-# 2. Diferenciar los ejemplares por género cambiando el color y su forma
+# 1. Representa solo la diagonal inferior porque la matriz es simétrica
+# 2. Diferencia los ejemplares por género cambiando el color y su forma
 # 2.1. Masculino: círculos azules.
 # 2.2. Femenino: triángulos naranjas.
 # 2.3. Infantes: cruces grises.
-# 3. Representar curvas de densidad en la diagonal
+# 3. Representa curvas de densidad en la diagonal
 scatterplotMatrix(abalone.df, diagonal=list(method="density"), 
                   upper.panel=NULL, col=c("blue", "orange", "gray"),
                   group=as.factor(abalone.df$Sex))
@@ -226,7 +226,7 @@ En función de las correlaciones resultantes entre los predictores y la variable
 
 ### 1.3.3. Diagramas de cajas
 
-Finalizando estudio multivariante, vamos a representar un diagrama de cajas con todas las variables numéricas para graficar sus dispersiones de datos y comprobar las hipótesis anteriores. Tal y como podemos apreciar, la mayoría de predictores tienen una longitud mínima, lo que significa que sus datos disponen de una **muy baja variabilidad**. Asimismo, también parece que sus **intervalos de valores son muy similares**, por lo que no existen variables con escalas predominantes que puedan afectar a los modelos. Otra conclusión que se puede extraer es que todos los predictores disponen de **outliers moderados**. Se trata de puntos exteriores muy cercanos a las cajas, por lo que parece que no son valores extremos. 
+Finalizando el estudio multivariante, vamos a representar un diagrama de cajas con todas las variables numéricas para graficar sus dispersiones de datos y comprobar las hipótesis anteriores. Tal y como podemos apreciar, la mayoría de predictores tienen una longitud mínima, lo que significa que sus datos disponen de una **muy baja variabilidad**. Asimismo, también parece que sus **intervalos de valores son muy similares**, por lo que no existen variables con escalas predominantes que puedan afectar a los modelos. Otra conclusión que se puede extraer es que todos los predictores disponen de **outliers moderados**. Se trata de puntos exteriores muy cercanos a las cajas, por lo que parece que no son valores extremos. 
 
 Sin embargo, en el caso de la variable independiente `Ring` podemos observar que su **dispersión es mayor**, puesto que su correspondiente caja tiene una mayor longitud. Este hecho indica que dispone de una mayor variabilidad en sus datos, lo que confirma nuestra teoría inicial. Igualmente, también se confirma la hipótesis de que existe una **concentración de ejemplares jóvenes** de una edad entre 5 y 15, y puede ser la razón por la que aparece un mayor número de outliers en las otras franjas de edad. Observándolos, podemos contar que el segundo grupo más representado es el que tiene una edad a partir de 15, y los que menos aparecen son aquellos que se encuentran en el intervalo [0, 5].
 
@@ -234,6 +234,10 @@ Sin embargo, en el caso de la variable independiente `Ring` podemos observar que
 # Definimos un color por cada variable
 var_colors<-c("red", "yellow", "orange", "green", "cyan", "blue", "pink", "purple")
 # Diagrama de cajas para cada variable
+# Parámetros
+# 1. Conjunto de datos a representar
+# 2. Representa la asimetría de los datos
+# 3. Colores para cada caja
 boxplot(abalone.df %>% select(-Sex), notch=TRUE, col=var_colors)
 ```
 
@@ -638,34 +642,169 @@ vehicle.shapiros.df
 
 ## 2.3. Análisis Exploratorio Multivariante
 
-Como en el apartado de regresión, a continuación presentamos un conjunto de análisis globales en los que se involucran a todas las variables de este dataset. El principal objetivo consiste en visualizar y determinar las relaciones y patrones existentes entre ellos que ayuden a la predicción de la variable `Class`.
+Como en el apartado de regresión, a continuación presentamos un conjunto de análisis globales en los que se involucran a todas las variables de este dataset. El principal objetivo consiste en visualizar y determinar las relaciones y patrones existentes entre ellos que ayuden a la predicción de la variable `Class`. Algunos de los estudios estadísticos solo admiten variables numéricas, como es el caso de las correlaciones, por lo que se añade **una columna más con los valores de `Class` codificados como etiquetas numéricas**.
+
+```{r}
+# Codificamos la variable independiente a etiquetas numéricas
+# 1:bus, 2:opel, 3:saab, 4:van
+vehicle.df$EncodedClass <- as.numeric(vehicle.df$Class)
+```
+
 
 ### 2.3.1. Matriz de Puntos
 
-A diferencia del apartado de regresión, en este caso no se puede representar una única matriz de puntos con todas las variables disponibles, puesto que su mayor número provoca que el gráfico resultante sea imposible de interpretar. Para resolver este inconveniente vamos a hacer **dos grupos de diez variables para graficar dos matrices de puntos, incluyendo en ambas la variable independiente `Class`**. Como la información disponible sobre cada predictor es mínima, he tratado de componer los **grupos según los nombres en común y sus posibles significados**, de modo que el primero de ellos contiene las medidas relativas a los diferentes ratios, mientras que en el segundo se encuentran las métricas asociadas a los ejes de las siluetas. De nuevo, **diferenciamos las muestras según el tipo de vehículo** asignándoles un color y forma diferente. A continuación se presentan las distintas asociaciones: naranja-`bus`, verde-`opel`, azul-`saab`, rosa-`van`.
+A diferencia del apartado de regresión, en este caso no se puede representar una única matriz de puntos con todas las variables disponibles, puesto que su mayor número provoca que el gráfico resultante sea imposible de interpretar. Para resolver este inconveniente vamos a hacer **dos grupos de diez variables para graficar dos matrices de puntos, incluyendo en ambas la variable independiente `Class`**. Como la información disponible sobre cada predictor es mínima, he tratado de componer los **grupos según los nombres en común y sus posibles significados**, de modo que el primero de ellos contiene las medidas relativas a los diferentes ratios, mientras que en el segundo se encuentran las métricas asociadas a los ejes de las siluetas. De nuevo, **diferenciamos las muestras según el tipo de vehículo** asignándoles un color y forma diferente. A continuación se presentan las distintas asociaciones: naranja-`bus`, verde-`opel`, azul-`saab`, rosa-`van`. 
+
+Si observamos las curvas de densidad del primer gráfico, podemos apreciar que la mayoría se caracteriza por tener varios máximos globales, lo que refuerza la teoría de que no siguen una distribución normal. Por otro lado, también se observa que en esta primera lista de predictores los valores de los **vehículos `opel` y `saab` son prácticamente similares**. Esta semejanza puede ser un problema en el entrenamiento de modelos puesto que, en este grupo, **no existen variables con los que poder diferenciarlos**. Esta situación no ocurre para los otros dos transportes de mayor tamaño, cuyos valores fluctúan más. 
+
+Por otro lado, observando las gráficas comparativas la característica que más destaca es que en algunas se puede apreciar una clara función creciente, mientras que otras son más confusas. Existen algunas medidas en las que las **diferencias entre los distintos tipos de vehículos son mínimas**, como es el caso de `Circularity`, `Distance_circularity`, `Length_rectangular` y `Hollows_ratio`. Este hecho puede indicar que **estas variables no aportan información suficiente** como para distinguir los vehículos disponibles en este dataset, por lo que podrían ser descartadas para el entrenamiento de los modelos. No ocurre la misma situación con las variables `Praxis_aspect_ratio`, `Max_length_aspect_ratio`, `Praxis_rectangular`, `Radius_ratio` y `Scatter_ratio`, en cuyas gráficas junto con la variable independiente podemos observar diferentes valores para los distintos tipos de transportes. En los dos primeros predictores, son los **vehículos de mayor tamaño los que disponen de mayores valores**. Una posible explicación consiste en que, al ser variables que miden la relación entre el radio mínimo y máximo, pueden **distinguir aquellos vehículos de mayor longitud**. Por el contrario, en las variables  `Praxis_rectangular` y `Scatter_ratio` podemos observar que los dos tipos de automóviles disponen de los mismos rangos de valores, mientras que las furgonetas tienen los valores más bajos y los autobuses los más altos. Este hecho nos puede indicar que los **dos tipos de automóviles, al disponer de características parecidas, tienen la misma relación entre sus áreas y dimensiones**, mientras que en el caso de las furgonetas esta asociación es menor y para los autobuses es mayor. Quizás estos predictores puedan ser útiles para identificar a vehículos de mayor tamaño, como las furgonetas.
+
+Finalmente analizamos las posibles relaciones lineales existentes entre las variables comparadas de este primer grupo. En base a los nombre de las variables, podemos intuir que **aquellas que se refieren a la misma propiedad**, como es el caso de `Circularity` y `Distance_circularity`, **pueden compartir una relación monotónica** y por lo tanto pueden aporta la misma información. En este caso, bastaría con seleccionar la que más información aporte para descartar las restantes en la construcción de los modelos de clasificación. Asimismo, a excepción de las gráficas comparativas con `Hollows_ratio`, en la mayoría se puede observar relaciones crecientes puesto que en sus representaciones los valores continuan aumentando a lo largo del intervalo. Este hecho puede indicarnos que la **mayoría de predictores se encuentran relacionados linealmente**, por lo que contienen una gran cantidad de información común.
 
 ```{r}
 # Primer grupo de variables para representar una matriz de puntos
-vehicle.first_group <- c("Circularity", "Distance_circularity", "Praxis_aspect_ratio", "Max_length_aspect_ratio", "Praxis_rectangular", "Length_rectangular", "Radius_ratio", "Scatter_ratio", "Hollows_ratio", "Class")
+vehicle.first_group <- c("Circularity", "Distance_circularity", "Praxis_aspect_ratio",
+                         "Max_length_aspect_ratio", "Praxis_rectangular", 
+                         "Length_rectangular", "Radius_ratio", "Scatter_ratio", 
+                         "Hollows_ratio", "EncodedClass")
 # Parámetros
-# 1. Representar solo la diagonal inferior porque la matriz es simétrica
-# 2. Diferenciar los ejemplares por género cambiando el color y su forma
-# 3. Representar curvas de densidad en la diagonal
+# 1. Representa solo la diagonal inferior porque la matriz es simétrica
+# 2. Diferencia los ejemplares por género cambiando el color y su forma
+# 3. Representa curvas de densidad en la diagonal
 scatterplotMatrix(vehicle.df[vehicle.first_group], diagonal=list(method="density"),
 upper.panel=NULL, col=c("orange", "green", "blue", "pink"),
 group=as.factor(vehicle.df$Class))
 ```
 
+En esta segunda matriz de puntos se representan los restantes predictores incluyendo, también, la variable independiente `Class`. De nuevo, si observamos sus curvas de densidad podemos visualizar que la mayoría de ellas se caracterizan por dos propiedades: varios valores máximos globales y una **gran similitud entre los dos tipos de automóviles**. Adicionalmente, si examinamos las gráficas comparativas de los predictores con la variable a predecir, podemos apreciar que en **más de la mitad los valores son similares para los cuatro tipos de vehículos**. De nuevo, estos predictores parecen no ayudar en la identificación de cada uno de los transportes disponibles, por lo que quizás puedan ser eliminados de los modelos. Las cinco variables que pueden ser de mayor utilidad se listan a continuación:
+
+* Los predictores `Minor_variance` y `Compactness` disponen de valores inferiores para el tipo de vehículo `van`, mientras que los restantes transportes disponen de rangos de valores más amplios, lo cual parece indicar que las **furgonetas disponen de siluetas más esféricas** que los demás vehículos. Además, en el caso de la última variable, podemos observar que junto con `Major_kurtosis` son las únicas en las que existen ciertas diferencias entre los dos tipos de automóviles. Por lo que estos dos predictores pueden aportar cierta información que permita su distinción.
+
+* La variable `Major_skewness` contiene un intervalo de valores mayor para los vehículos de mayor tamaño que para los dos tipos de automóviles. Este predictor puede ayudar a **distinguir entre estos dos grupos de transportes**, ya que las siluetas de los autobuses y furgonetas suelen estar caracterizadas por una mayor asimetría.
+
+* Por último, la variable `Elongatedness` dispone de valores inferiores para el tipo de vehículo `bus` en contraposición con los valores más altos asociados al tipo de transporte `van`. Esto indica que las **siluetas de las furgonetas son las más estiradas**, por lo que este predictor puede proporcionar información útil con la que diferenciar los dos tipos de vehículos de mayor tamaño.
+
+Por último, procedemos a estudiar las posibles relaciones lineales entre los diferentes predictores disponibles. A diferencia de la matriz de puntos anterior, en la mayoría de las gráficas no se reconoce ninguna función particular que determine el aumento o disminución de los valores, por lo que **parece existir un menor número de asociaciones**. Las más destacables son las relaciones lineales entre las variables `Major_variance`, `Minor_variance` en combinación con `Gyration_radius`, `Compactness` y `Elongatedness`. Existen **cuatro relaciones monotónicas decrecientes** entre esta última variable y las cuatro restantes mencionadas anteriormente. En primer lugar se encuentran las tres asociadas con los momentos de las imágenes en el radio mínimo y máximo, que parecen indicar que mayor valor, menor es la elasticidad de la silueta. Mientras que para la variable `Compactness` parece que conforme menos elástica es la silueta, menos estirada es, característica que parece lógica si consideramos la elasticidad de un círculo perfecto.
 
 ```{r}
 # Segundo grupo de variables para representar una segunda matriz de puntos
-vehicle.second_group <- c("Major_variance", "Minor_variance", "Major_skewness", "Minor_skewness", "Minor_kurtosis", "Major_kurtosis", "Gyration_radius", "Compactness", "Elongatedness", "Class")
+vehicle.second_group <- c("Major_variance", "Minor_variance", "Major_skewness", 
+                          "Minor_skewness", "Minor_kurtosis", "Major_kurtosis", 
+                          "Gyration_radius", "Compactness", "Elongatedness", 
+                          "EncodedClass")
 # Parámetros
-# 1. Representar solo la diagonal inferior porque la matriz es simétrica
-# 2. Diferenciar los ejemplares por género cambiando el color y su forma
-# 3. Representar curvas de densidad en la diagonal
+# 1. Representa solo la diagonal inferior porque la matriz es simétrica
+# 2. Diferencia los ejemplares por género cambiando el color y su forma
+# 3. Representa curvas de densidad en la diagonal
 scatterplotMatrix(vehicle.df[vehicle.second_group], diagonal=list(method="density"),
 upper.panel=NULL, col=c("orange", "green", "blue", "pink"),
 group=as.factor(vehicle.df$Class))
+```
+
+### 2.3.2. Correlaciones
+
+A continuación se representarán dos gráficas de correlaciones para cada uno de los diferentes grupos anteriores con el objetivo de identificar posibles asociaciones entre los predictores y con la variable independiente. Así, se pretende conocer cuáles son las variables más prometedoras para predecir el tipo de vehículo a partir de las propiedades de su silueta. Tal y como podemos observar en el siguiente gráfico, nuestra teoría inicial de que podría haber numerosas relaciones entre los predictores parece cumplirse. En particular, las siguientes asociaciones son las más relevantes:
+
+1. En primer lugar se encuentran los predictores **`Circularity` y `Distance_circularity`** con un coeficiente de correlación de 0.8, lo que indica una **relación alta**. Sin embargo, esta asociación era de esperar puesto que ambas variables hacen referencia a la misma propiedad. Esto nos permitirá descartar a la que aporte menos información útil para la predicción de la variable independiente. **En esta misma situación se encuentran la pareja de predictores `Length_rectangular` y `Praxis_rectangular`**. Adicionalmente, podemos observar que **las cuatro variables están relacionadas entre sí** por unos coeficientes de correlación entre 0.77 y 0.97, por lo que comparten una considerable cantidad de información. Particularmente, la correlación entre **`Circularity` y `Length_rectangular` afirma que existe una asociación perfecta**. Una posible razón explicativa es que en las fórmulas de ambos predictores se consideran **el área y el perímetro de la silueta**, dos medidas matemáticas muy relacionadas entre sí.
+
+2. Un segundo grupo de variables correladas lo forman aquellas que hacen referencia a una proporción o ratio entre varias medidas. Especialmente destacan los predictores **`Scatter_ratio` y `Praxis_rectangular` con un coeficiente de 0.99, lo que indica que existe una relación total** entre sendas variables. Mientras la primera hace referencia a la inercia entre el radio mínimo y máximo, la segunda vincula el área con las dimensiones de la silueta. Aunque parezcan medidas diferentes, parecen aportar la misma información por lo que se podrá descartar aquella que menos relevante sea para el entrenamiento de modelos de clasificación. Otras correlaciones que se pueden categorizar como moderadas las protagonizan los pares de variables `Scatter_ratio` y `Radius_ratio`, `Praxis_aspect_ratio` y `Max_length_aspect_ratio`.
+
+3. Adicionalmente, **algunas de las variables de los dos grupos anteriores también se encuentran correladas** entre sí. La relación más destacable por su fuerza es la de **`Scatter_ratio` y `Distance_circularity` con un coeficiente de 0.91**, lo que indica que sendos predictores también aportan el mismo tipo de información. LA explicación de este suceso puede ser similar a la anterior y es que la primera variable hace referencia a los radios de la silueta, mientras que la otra relaciona el área con su volúmen, por lo que los componentes de cada medida matemática están fuertemente vinculados.
+
+Finalmente, destacamos la **ausencia de correlaciones importantes con la variable independiente**, por lo que en este primer grupo no parece haber predictores particulares que expliquen la variabilidad de vehículos de este dataset.
+
+```{r}
+# Representa los coeficientes de correlación para el 
+# primer grupo de predictores y la variable independiente
+# Parámetros
+# 1. Calcula los coeficientes de correlación
+# 2. Representa los coeficientes con números
+# 3. Orden alfabético de las variables
+# 4. Representa solo la matriz diagonal inferior
+# 5. Tamaño de las etiquetas y de los coeficientes de correlación
+corrplot(cor(vehicle.df%>%select(vehicle.first_group)), 
+         method='number', order='alphabet',
+type='lower', tl.cex=0.7, number.cex=0.7)
+```
+
+En este segundo gráfico se muestran las correlaciones existentes entre las variables del segundo grupo más la variable independiente. La primera cualidad destacable es que, a diferencia del gráfico anterior, la **mayoría de correlaciones importantes son negativas**, lo que indica que los predictores relacionados no comparten una asociación monotónica, si no un vínculo inverso, puesto que conforme aumenta uno disminuye el contrario, y viceversa. En este caso vamos a explicarlas según la obviedad de las mismas.
+
+1. La primera asociación más trivial es la compuesta por **`Compactness` y `Elongatedness` puesto que se trata de dos variables opuestas**. Mientras la primera mide el grado de compactación de una silueta, entendiendo esta propiedad como el grado de similitud con un círculo perfecto, el segundo predictor representa cuán elástica es la silueta. Por lo tanto, su asociación contraria parece lógica. 
+
+2. Una segunda correlación positiva bastante obvia es la que forman las variables `Minor_variance` y `Major_variance`, puesto que ambas representan la **misma medida pero para diferentes longitudes de radio. Esta relación se representa con una tercera variable denominada `Gyration_radius`** y por ende, genera dos correlaciones adicionales con los dos primeros predictores. Esto nos indica que probablemente solo necesitemos el tercer predictor para representar toda la información que aportan estas propiedades.
+
+3. Si existen varias correlaciones positivas moderadas y fuertes entre las variables `Compactness` y los tres predictores del punto anterior, es lógico encontrar **correlaciones negativas las tres variables anteriores y el predictor opuesto `Elongatedness`**. Sin embargo, estas relaciones contrarias parecen ser mucho más fuertes que las asociaciones positivas puesto que sus coeficientes son considerablemente mayores. Esto nos indica que comparten más información con el predictor `Elongatedness` que con la variable `Compactness`.
+
+4. La última correlación a destacar la conforman `Major_skewness` y `Major_kurtosis`. Se trata de una **relación fuerte y en dirección opuesta** por su coeficiente negativo. A diferencia de los casos anteriores, esta relación no ha sido obvia a mi parecer debido a los conceptos estadísticos de asimetría y curtosis por los que me estaba guiando para intentar entender ambas variables. Sin embargo, en el caso de este dataset, parece que cuanto más asimétrica sea una silueta, menor coeficiente de curtosis, y viceversa. 
+
+Como en el gráfico anterior, podemos observar que en segundo **tampoco existen correlaciones relevantes con la variable independiente**, por lo que parece difícil explicar las siluetas de los vehículos con variables particulares. Deberemos de formar un conjunto de métricas que en conjunto aporten información suficiente para identificar los diferentes transportes disponibles.
+
+```{r}
+# Representa los coeficientes de correlación para el 
+# segundo grupo de predictores y la variable independiente
+# Parámetros
+# 1. Calcula los coeficientes de correlación
+# 2. Representa los coeficientes con números
+# 3. Orden alfabético de las variables
+# 4. Representa solo la matriz diagonal inferior
+# 5. Tamaño de las etiquetas y de los coeficientes de correlación
+corrplot(cor(vehicle.df%>%select(vehicle.second_group)), 
+         method='number', order='alphabet',
+type='lower', tl.cex=0.7, number.cex=0.7)
+```
+
+
+### 2.3.3. Diagramas de cajas
+
+Para acabar el estudio multivariante de este dataset, a continuación procedemos a representar los diagramas de cajas de cada uno de los grupos anteriores para mostrar su dispersión y variabilidad de datos. Como hemos analizado anteriormente, a diferencia del dataset de regresión, las variables de **este conjunto de datos sí se caracterizan por escalas súmamente diferentes**, lo que puede influir tanto en este tipo de gráficos como en los clasificadores. Por ende, en primer lugar aplicamos la función `scale` para utilizar un **escalado y centrado mediante *Z score** con el que construir un segundo dataset cuyos datos dispongan de una media 0 y desviación típica de 1. 
+
+En este primer gráfico podemos observar que la **mayoría de predictores se caracterizan por una moderada o severa asimetría**, según se ha estudiado en secciones anteriores, a excepción de las variables `Scatter_ratio`, `Max_length_aspect_ratio` y `Distance_circularity`, que disponen de niveles más bajos puesto que su mediana se sitúa aproximadamente en el centro de las cajas. Otra característica a destacar es que, como se predijo anteriormente, la **mayoría de predictores disponen de una gran dispersión en sus datos** en base a la longitud de sus correspondientes cajas. Esta hipótesis también ha sido estudiada anteriormente de forma generalizada y específica a las variables según la naturaleza de sus valores. No obstante, aún queda un tipo de análisis que no se ha efectuado aún: los valores outliers. Como podemos apreciar, **solo tres de las variables representadas disponen de muestras alejadas del conjunto de valores**. En el caso del predictor `Scatter_ratio` podemos observar que se trata de valores no demasiado alejados del valor máximo del conjunto. Sin embargo, los predictores `Praxis_rectangular` y `Max_length_aspect_ratio` sí que contienen datos extremadamente alejados del rango de valores habitual, por lo que estas variables pueden contar con un conjunto de outliers extremos. Las **tres variables hacen referencia a los radios mínimo y máximo** de una silueta, por lo que considerando que dos de los cuatro vehículos disponibles son automóviles, podemos intuir que estas muestras tan alejadas pueden referirse a **vehículos con siluetas de mayor tamaño**, como puede ser el caso de los autobuses.
+
+```{r}
+# Escalamos y centramos todas las variables numéricas
+vehicle.scaled.df <- data.frame(scale(vehicle.df 
+                                      %>% select(-Class, -EncodedClass)))
+# Añadimos las variables de clase y la codificada al dataset escalado
+vehicle.scaled.df$Class <- vehicle.df$Class
+vehicle.scaled.df$EncodedClass <- vehicle.df$EncodedClass
+
+# Definimos un color por cada variable
+var_colors<-c("red", "yellow", "orange", "green", "cyan",
+              "blue", "pink", "purple", "gray")
+# Diagrama de cajas para el primer grupo de predictores, 
+# sin la variable independiente
+# Parámetros
+# 1. Escala al 90% del tamaño del nombre de las variables y del gráfico
+# 2. Conjunto de datos a representar
+# 3. Representa la asimetría de los datos
+# 4. Colores para cada caja
+# 5. Esconde el eje X y personaliza el eje Y para que el gráfico sea horizontal
+# y muestre los nombres de las variables para cada caja
+par(cex.axis=0.9, mar=c(1, 10, 1, 1))
+boxplot(vehicle.scaled.df %>% select(vehicle.first_group, -EncodedClass), 
+        notch=TRUE, col=var_colors, 
+        xaxt="n", yaxt="n", horizontal=TRUE)
+axis(2, labels=vehicle.first_group[1:(length(vehicle.first_group)-1)], 
+     at=1:(length(vehicle.first_group)-1), las=2)
+```
+
+A continuación se muestra un segundo gráfico con las restantes variables que no se mostraban en el anterior. Como ocurría en el primer diagrama de cajas, en esta segunda representación existen **ciertas variables con un mayor grado de asimetría**, mientras que otras disponen de una mediana bastante centrada, como es el caso de `Compactness`. De igual modo, podemos visualizar que la mayoría de predictores disponen tanto de un amplio rango de valores como de una considerable longitud de sus cajas, por lo que sus **datos también se encuentran considerablemente dispersos**. En el caso de los valores extremos, podemos observar que a diferencia de las variables anteriores, que los predictores de este gráfico **la mayoría solo dispone de outliers moderados**, es decir, puntos fuera del intervalo de valores pero bastante cercanos a él, a excepción de `Major_skewness`, que sí que dispone de un conjunto de muestras extremadamente alejadas de su respectiva caja. Como hemos analizado anteriormente, esta variable era capaz de diferenciar dos grupos de transportes: los dos tipos de automóviles y los dos vehículos de mayor tamaño. Por tanto, con gran probabilidad, los **outliers extremos que tiene harán referencia a enormes grados de asimetrías** asociados a este último grupo.  
+
+```{r}
+# Diagrama de cajas para el segundo grupo de predictores, 
+# sin la variable independiente
+# Parámetros
+# 1. Escala al 90% del tamaño del nombre de las variables y del gráfico
+# 2. Conjunto de datos a representar
+# 3. Representa la asimetría de los datos
+# 4. Colores para cada caja
+# 5. Esconde el eje X y personaliza el eje Y para que el gráfico sea horizontal
+# y muestre los nombres de las variables para cada caja
+par(cex.axis=0.9, mar=c(1, 10, 1, 1))
+boxplot(vehicle.scaled.df %>% select(vehicle.second_group, -EncodedClass), 
+        notch=TRUE, col=var_colors, 
+        xaxt="n", yaxt="n", horizontal=TRUE)
+axis(2, labels=vehicle.second_group[1:(length(vehicle.second_group)-1)], 
+     at=1:(length(vehicle.second_group)-1), las=2)
 ```
 
