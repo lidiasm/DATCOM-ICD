@@ -13,12 +13,16 @@ require(tidyverse)
 require(psych)
 require(corrplot)
 require(kknn)
+require(philentropy)
+require(MASS)
 
 library(car)
 library(tidyverse)
 library(psych)
 library(corrplot)
 library(kknn)
+library(philentropy)
+library(MASS)
 
 # Semilla para que los resultados que dependen de la aleatoriedad
 # sean reproducibles.
@@ -807,4 +811,147 @@ boxplot(vehicle.scaled.df %>% select(vehicle.second_group, -EncodedClass),
 axis(2, labels=vehicle.second_group[1:(length(vehicle.second_group)-1)], 
      at=1:(length(vehicle.second_group)-1), las=2)
 ```
+
+## 2.4. Modelos de Clasificación 
+
+En esta sección se pretende experimentar con diferentes algoritmos para entrenar diversos clasificadores y analizar sus métricas de bondad para seleccionar aquel que mejor comportamiento presente en la predicción de la variable independiente. Con el objetivo de establecer las mismas condiciones para todos los algoritmos y facilitar el entrenamiento de algunas técnicas basadas en distancias, como es el caso de KNN, **se utilizará la variable independiente codificada `EncodedClass`** para la predicción del tipo de vehículos.
+
+### 2.4.1. K-Nearest Neighbors (KNN)
+
+En esta subsección se entrenarán diferentes modelos utilizando el algoritmo de los K vecinos más cercanos o KNN, variando tanto el parámetro K como la métrica para calcular la matriz de distancias. Para ello vamos a reutilizar la función que se implemetó para el primer ejercicio de evaluación continua de clasificación. En ella se **genera un conjunto de entrenamiento y test**, en caso de que este último no haya sido proporcionado, para calcular las **distancias entre cada muestra a clasificar y los datos de entrenamiento**. A continuación se realiza una **votación por mayoría entre los K vecinos más cercanos** para seleccionar la clase de la muestra de test. Con el objetivo de calcular la precisión para ambos conjuntos, se ha creado una segunda función para efectuar el cálculo de la matriz y la clasificación de las muestras a unos conjuntos proporcionados como argumentos. 
+
+Previo a su aplicación, recordemos los requisitos de datos asociados a este algoritmo.
+
+1. Se deben **normalizar los datos** para que el cálculo de distancias no se vea influido por las diferentes escalas de los predictores. Este paso ya se ha realizado anteriormente al comienzo del análisis multivariante.
+
+2. Los **valores nominales deben codificarse** como etiquetas numéricas o variables *dummy* para facilitar el cálculo de la matriz de distancias. De nuevo, este segundo proceso también ha sido realizado con anterioridad.
+
+3. Los **valores perdidos o nulos deben ser eliminados o imputados**. En este caso el dataset no dispone de valores perdidos, tal y como se observó en el análisis general.
+
+Una vez hemos comprobado que se cumplen las condiciones necesarias, podemos aplicar el algoritmo KNN. En mi caso particular he realizado cuatro experimentos diferentes, es decir, se han entrenado cuatro modelos distintos utilizando esta técnica para experimentar con dos métricas y dos valores de K diferentes. En los **dos primeros modelos se ha aplicado la distancia de Manhattan**, puesto que los cálculos que realiza para determinar la similitud entre dos muestras son más realistas que los que efectúa la distancia Euclídea al trazar una simple línea recta entre ambas. Mientras que para los **dos últimos modelos se usa el índice de Jaccard**, el cual realiza la intersección entre las muestas coincidentes y el total. Esta métrica suele aplicarse para el estudio de patrones, comparando sus diferencias y similitudes, y por ende me ha parecido adecuada para incluir en los experimentos puesto que en este problema de clasificación el objetivo es obtener las diferencias que permitan distinguir entre los cuatro tipo de vehículos. Adicionalmente, se han probado **dos valores del parámetro K, uno más pequeño y otro más alto** para comprobar cómo afecta en el entrenamiento de los modelos.
+
+```{r}
+# Función que calcula la matriz de distancias entre dos conjuntos proporcionados
+# y clasifica las muestras de test según la distancia a los K vecinos más
+# cercanos de train.
+my_knn_train_test <- function(train, train_labels, test=NA, test_labels=NA, 
+                   k=1, metric="euclidean") {
+  # Vector de predicciones
+  preds <- c()
+  # Matriz de distancias entre cada muestra de test y todas de train
+  for(i in 1:dim(test)[1]) {
+    dist_mat <- c()
+    for(j in 1:dim(train)[1]) {
+      xmat <- rbind(test[i,], train[j,])
+      # Silencia la salida de la función `distance` 
+      # para luego imprimir la tasa de aciertos
+      dist_mat <- append(dist_mat, invisible(suppressMessages(
+        distance(as.data.frame(xmat), metric)))) 
+    }
+    # Obtenemos las K muestras con menor distancia 
+    neighs <- sort(dist_mat)[1:k] 
+    # Realizamos una votación para decidir la clase a la que pertenece 
+    # la muestra de test.
+    # Para ello se realiza una media de las clases de las muestras 
+    # más cercanas y se redondea el valor para obtener un número entero.
+    sample_class <- 0
+    for(s in 1:length(neighs)) {
+      pos <- which(dist_mat == neighs[s])
+      sample_class <- sample_class + train_labels[pos]
+    }
+    preds <- append(preds, round(sample_class/k))
+  }
+  # Calculamos la tasa de aciertos comparando las predicciones con 
+  # las etiquetas reales del conjunto de test
+  return (mean(preds == test_labels, na.rm=TRUE))
+}
+
+# Función que aplica el algoritmo KNN sobre un conjunto de entrenamiento y
+# validación.
+my_knn <- function(train, train_labels, test=NA, test_labels=NA, 
+                   k=1, metric="euclidean") {
+  new_train<-train
+  new_test<-test
+  # 90%-10% en caso de que no se haya especificado un conjunto de test
+  if (is.na(test)) {
+    shuffle_train <- sample(dim(train)[1])
+    pct90 <- (dim(train)[1] * 90) %/% 100
+    new_train <- train[shuffle_train[1:pct90], ]
+    train_labels <- train_labels[shuffle_train[1:pct90]]
+    new_test <- train[shuffle_train[(pct90+1):dim(train)[1]], ]
+    test_labels <- train_labels[shuffle_train[(pct90+1):dim(train)[1]]]
+  }
+  # 1. Entrenamiento y validación sobre el mismo conjunto de train
+  train_prec <- my_knn_train_test(new_train, train_labels, 
+                                  new_train, train_labels, k, metric)
+  # 2. Entrenamiento con train y validación con test
+  test_prec <- my_knn_train_test(new_train, train_labels, 
+                                 new_test, test_labels, k, metric)
+  return (c(train_prec, test_prec))
+}
+
+# Primer modelo KNN con distancia Manhattan y K=3
+vehicle.knn1 <- my_knn(vehicle.scaled.df%>%dplyr::select(-Class, -EncodedClass), vehicle.scaled.df$EncodedClass, k=3, metric="manhattan")
+vehicle.knn1
+# Segundo modelo KNN con distancia Manhattan y K=21
+vehicle.knn2 <- my_knn(vehicle.scaled.df%>%dplyr::select(-Class, -EncodedClass), vehicle.scaled.df$EncodedClass, k=21, metric="manhattan")
+vehicle.knn2
+# Tercer modelo KNN con distancia Jaccard y K=3
+vehicle.knn3 <- my_knn(vehicle.scaled.df%>%dplyr::select(-Class, -EncodedClass), vehicle.scaled.df$EncodedClass, k=3, metric="jaccard")
+vehicle.knn3
+# Cuarto modelo KNN con distancia Jaccard y K=21
+vehicle.knn4 <- my_knn(vehicle.scaled.df%>%dplyr::select(-Class, -EncodedClass), vehicle.scaled.df$EncodedClass, k=21, metric="jaccard")
+vehicle.knn4
+```
+
+En los resultados que podemos observar, destacamos que la primera cifra se corresponde con la tasa de acierto sobre el conjunto de entrenamiento, mientras que la segunda se efectúa sobre el conjunto de test. Así, para el **primer modelo entrenado con K=3 y la distancia Manhattan**, podemos observar que su tasa de acierto en **entrenamiento es de un 81%** aproximadamente, mientras que en el conjunto de **test es de un 25%**. Como podemos apreciar, existe una gran diferencia entre el comportamiento que presenta con los datos de entrenamiento que con las muestras desconocidas. Una posible explicación reside en el valor del parámetro K, que al ser muy bajo puede favorecer la aparición del **sobreajuste**. Sin embargo, al observar las tasas de acierto del segundo modelo entrenado con la misma distancia pero con un valor de K más alto, podemos observar que si bien su **precisión sobre entrenamiento ha disminuido** considerablemente, la tasa de aciertos **en el conjunto de test es prácticamente similar**. A diferencia del primer modelo, en este caso la situación este segundo clasificador se caracteriza por un **subajuste**, lo que significa que no se ha fijado bien en los datos de entrenamiento para aprender los patrones de cada vehículo.
+
+Observando los resultados de los **dos últimos modelos entrenados con el índice de Jaccard**, podemos apreciar que en el tercer modelo entrenado con K=3 dispone de una **precisión de entrenamiento similar** al primer clasificador que comparte el valor de este parámetro. Sin embargo, con esta nueva métrica se ha **mejorado la precisión sobre el conjunto de test** hasta un 28%, aproximadamente. Esto nos indica que el **índice de Jaccard es más efectivo** para calcular la similitud entre las siluetas de los diferentes vehículos. No obstante, igual que en el primer clasificador, este modelo también sufre un **importante sobreajuste**. Por otro lado, en el cuarto modelo entrenado con K=21 la tasa de acierto sobre el conjunto de entrenamiento es ligeramente menor que el segundo clasificador con el mismo parámetro, pero la **precisión del conjunto de test es ligeramente mejor**. 
+
+En función de los experimentos realizados podemos extraer las siguientes conclusiones:
+
+1. Parece obvio que el comportamiento del algoritmo **KNN es altamente dependiene de la métrica utilizada para calcular la matriz de distancias** con la que clasificar las muestras. Por lo tanto, se deberán estudiar las distancias disponibles para intentar aplicar la que mejor se ajuste a cada problema en particular.
+
+2. Si establecemos un **valor pequeño para el parámetro K**, existe una alta probabilidad de que el modelo sufra un **severo sobreajuste** como hemos podido comprobar. En cambio, con **valores más altos ocurre una situación opuesta de subajuste**, en la que el clasificador no es capaz de identificar completamente los patrones de cada clase y, por ende, pierde capacidad de generalización.
+
+3. Finalmente, además de la influencia de los dos anteriores parámetros, también hay que considerar que el algoritmo **KNN suele proporcionar buenos resultados en caso de que las clases se encuentren bien separadas**. Como hemos observado en los diferentes análisis exploratorios, esta condición no se cumple puesto que las características de las siluetas de los distintos vehículos son muy similares, especialmente los dos tipos de automóviles. 
+
+### 2.4.2. Linear Discriminant Analysis (LDA)
+
+A continuación se pretende utilizar el algoritmo LDA para intentar mejorar los resultados proporcionados de los clasificadores entrenados con KNN. Como en el caso anterior, vamos a utilizar el **conjunto de datos escalado y todos los predictores disponibles**. Previo a su aplicación, vamos a comprobar las asunciones asociadas:
+
+1. **Las muestras de datos son independientes entre sí**. Como no conocemos el proceso de extracción de las siluetas de cada uno de los vehículos disponibles, asumiremos que esta condición se cumple.
+
+2. **Los predictores siguen una distribución normal para cada clase**. En los análisis exploratorios hemos podido comprobar que ninguna de las variables sigue una distribución normal, por lo que es de esperar que tampoco se siga para cada una de las clases disponibles, por lo que esta condición no se cumple. 
+
+3. **Los predictores tienen una misma matriz de covarianza para cada clase**. Esta asunción se comprueba en el siguiente *chunk* aplicando el test de Levene a cada uno de los predictores que se van a utilizar. La hipótesis nula afirma que no disponen de la misma varianza, mientras que la hipótesis alternativa apuesta por la opción contraria. Como podemos observar en los resultados, todos los tests rechazan la hipótesis nula por lo que se confirma que **todos los predictores comparten la misma covarianza**.
+
+```{r}
+# Aplicamos el de test de Levene para verificar la covarianza
+for (predictor in colnames(vehicle.scaled.df %>% select(-EncodedClass, -Class))) {
+  cat("\n", predictor, "\n")
+  print(leveneTest(vehicle.scaled.df[[predictor]]~Class, vehicle.scaled.df))
+}
+```
+
+Tras conocer que solo dos de las tres condiciones necesarias se cumplen para aplicar el algoritmo LDA, a continuación entrenamos y validamos un primer modelo. En los siguientes resultados podemos observar que se ha conseguido una **tasa de acierto del 79.7% para entrenamiento y del 76.4% para test**, por lo que este clasificador dispone de una mayor capacidad de generalización con respecto a los anteriores y sin sufrir sobreajuste o subajuste. Una posible razón explicativa de este buen comportamiento reside en el cumplimiento de la tercera asunción, en el que **todos los predictores utilizados disponen de la misma covarianza**, pese a no seguir una distribución normal. Observando la matriz de confusión, podemos apreciar que la **mayoría de errores se concentran en los dos tipos de automóviles**. Este hecho confirma nuestra teoría inicial de que disponen de características muy similares y que no existe suficiente información como para identificar cada uno de los modelos de coche, con una mayor precisión. Por otro lado, parece ser que los transportes de mayor tamaño son más fácilmente reconocibles por este modelo.
+
+```{r}
+# Dividimos el conjunto de datos en train y test (90%-10%)
+vehicle.shuffle.train <- sample(nrow(vehicle.scaled.df))
+vehicle.pct90 <- (nrow(vehicle.scaled.df) * 90) %/% 100
+vehicle.scaled.train <- vehicle.scaled.df[vehicle.shuffle.train[1:vehicle.pct90], ]
+vehicle.scaled.test <- vehicle.scaled.df[vehicle.shuffle.train[(vehicle.pct90+1):nrow(vehicle.scaled.df)], ]
+# Primer modelo con LDA
+vehicle.lda1 <- lda(Class~.-EncodedClass, data=vehicle.scaled.train)
+# Obtenemos las predicciones sobre train y test
+vehicle.lda1.train.preds <- predict(vehicle.lda1, vehicle.scaled.train)
+vehicle.lda1.test.preds <- predict(vehicle.lda1, vehicle.scaled.test)
+# Calculamos la precisión para train y test
+mean(vehicle.lda1.train.preds$class==vehicle.scaled.train$Class)
+mean(vehicle.lda1.test.preds$class==vehicle.scaled.test$Class)
+table(vehicle.lda1.test.preds$class, vehicle.scaled.test$Class)
+```
+
+### 2.4.3. Quadratic Discriminant Analysis (QDA)
 
