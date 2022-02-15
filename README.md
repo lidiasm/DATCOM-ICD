@@ -28,3 +28,8 @@ En este fichero se incluyen un conjunto de diferentes ejercicios para calcular d
 
 ### Trabajos teórico-prácticos
 
+1. **Apartado de regresión**. En mi caso particular he utilizado el dataset `abalone` tanto para el desarrollo de un análisis exploratorio como para la aplicación de diferentes técnicas de regresión como son la **Regresión Lineal Simple, Múltiple y *K Nearest Neighbours* (KNN)** previa adaptación para problemas de regresión.
+
+2. **Apartado de clasificación**. En este segundo problema se ha empleado un conjunto de datos conocido como `vehicle` para el desarrollo de su análisis exploratorio y su resolución con diversas técnicas de clasificación, como la versión para clasificación de ***K Nearest Neighbours* (KNN), *Linear Discriminant Analysis* (LDA) y *Quadratic Discriminant Analysis* (QDA)**.
+
+Finalmente en sendos trabajos se ha realizado una comparativa estadística de los diferentes algoritmos utilizados para cada uno de los problemas contemplados a través del **test de Friedman y su *post-hoc* aplicando la penalización por pasos de Holm**.
